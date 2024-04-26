@@ -79,8 +79,8 @@ def find_camera_position(slm_disp_obj, cam_obj, pms_obj, lin_phase, exp_time=100
 
     cam_roi_pos = [1400, 1550]
     cam_roi_sz = [300, 300]
-    cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
-                        int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
+    # cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
+    #                     int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
 
     cam_obj.take_image()
     img = cam_obj.last_frame
@@ -191,34 +191,68 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
     slm_disp_obj.display(phi_centre)
 
+
+
+
     # Take camera image
     # cam_obj.start()
     cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
     cam_obj.take_image()
     imgzaz = cam_obj.last_frame
 
-    # fig = plt.figure()
-    # plt.imshow(imgzaz, cmap='inferno', vmax=1000)
-    # plt.colorbar()
-    # plt.title("phi_centre IMG")
-    # plt.show()
+    plo_che  =False
+    if plo_che:
+        fig = plt.figure()
+        plt.imshow(imgzaz, cmap='inferno', vmax=1000)
+        plt.colorbar()
+        plt.title("phi_centre IMG")
+        plt.show()
+
+
+    cam_roi_pos = [1400, 1550]
+    cam_roi_sz = [300, 300]
+    cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
+                        int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
+
+    cam_obj.take_image()
+    imgzaz = cam_obj.last_frame
+
+    if plo_che:
+        fig = plt.figure()
+        plt.imshow(imgzaz, cmap='inferno', vmax=1000)
+        plt.colorbar()
+        plt.title("phi_centre IMG")
+        plt.show()
+
+
+
     # measure_slm_intensity.img_exp_check = cam_obj.get_image(exp_time)
-    measure_slm_intensity.img_exp_check = cam_obj.take_image()
+    # measure_slm_intensity.img_exp_check = cam_obj.take_image()
+    #
+    #
+    #
+    #
+    #
+    # # Find Camera position with respect to SLM
+    # popt_clb, img_cal = find_camera_position(slm_disp_obj, cam_obj, pms_obj, lin_phase, exp_time=exp_time / 10,
+    #                                          aperture_diameter=npix // 20, roi=[400, 400])
+    #
+    # lin_phase = np.array([-spot_pos, -spot_pos])
+    # slm_phase = pt.init_phase(np.zeros((aperture_width, aperture_width)), slm_disp_obj, pms_obj, lin_phase=lin_phase)
+    # # slm_phase = np.remainder(slm_phase, 2 * np.pi)
+    # slm_phase = np.flipud(np.fliplr(slm_phase))
+    #
 
-    # Find Camera position with respect to SLM
-    popt_clb, img_cal = find_camera_position(slm_disp_obj, cam_obj, pms_obj, lin_phase, exp_time=exp_time / 10,
-                                             aperture_diameter=npix // 20, roi=[400, 400])
+    # # ny, nx = cam_obj.res
+    # ny, nx = img_cal.shape
+    # calib_pos_x = int(popt_clb[0] + nx // 2)
+    # calib_pos_y = int(popt_clb[1] + ny // 2)
 
-    # ny, nx = cam_obj.res
-    ny, nx = img_cal.shape
-    calib_pos_x = int(popt_clb[0] + nx // 2)
-    calib_pos_y = int(popt_clb[1] + ny // 2)
-
-    plt.figure()
-    plt.imshow(img_cal, cmap='inferno', vmax=1000)
-    plt.plot(calib_pos_x, calib_pos_y, 'wx', color='g')
-    plt.title('Camera image and fitted spot position')
-    plt.show()
+    # plt.figure()
+    # plt.imshow(img_cal, cmap='inferno', vmax=1000)
+    # plt.plot(calib_pos_x, calib_pos_y, 'wx', color='g')
+    # plt.title('Camera image and fitted spot position')
+    # plt.show()
 
     # Take camera images
     # print("roi_width, {}".format(roi_width))
@@ -233,6 +267,9 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     # cam_obj.num = aperture_number
     # cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
 
+
+
+
     print(Fore.LIGHTGREEN_EX + "record background" + Style.RESET_ALL)
     # close shutter
     sh.shutter_state()
@@ -241,40 +278,60 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     if sh.shut_state == 1:
         sh.shutter_enable()
 
-    frame_num = 50
+    frame_num = 20
     cam_obj.take_average_image(frame_num)
     cam_obj.bckgr = cam_obj.last_frame
+    print(cam_obj.bckgr.shape)
+    bckgr = cam_obj.bckgr
+    print(bckgr.shape)
+
+
+    if plo_che:
+        fig = plt.figure()
+        plt.imshow(cam_obj.bckgr, cmap='inferno')
+        plt.colorbar()
+        plt.title('backg')
+        plt.show()
+
     # open shutter
     sh.shutter_enable()
     time.sleep(0.4)
 
-    img = np.zeros((ny, nx, aperture_number ** 2))
+    # img = np.zeros((ny, nx, aperture_number ** 2))
+    img = np.zeros((bckgr.shape[0], bckgr.shape[1], aperture_number ** 2))
     # img = np.zeros((roi[1], roi[0], aperture_number ** 2))
     aperture_power = np.zeros(aperture_number ** 2)
 
     for i in range(aperture_number ** 2):
-        i=aperture_number**2 // 2
-        i=i+4
+        i = (aperture_number ** 2) // 2 - aperture_number // 2
+        # i=i-7
         print(i)
         masked_phase = np.copy(zeros_full)
+        bckgr = np.copy(bckgr)
+        print(bckgr.shape)
         masked_phase[slm_idx[0][i]:slm_idx[1][i], slm_idx[2][i]:slm_idx[3][i]] = slm_phase
 
-        slm_disp_obj.display(masked_phase)
+        # slm_disp_obj.display(masked_phase)
+        slm_disp_obj.display(phi_centre)
 
         # img[..., i] = cam_obj.get_image(int(exp_time))
 
         cam_obj.take_average_image(frame_num)
-        img[..., i] = cam_obj.last_frame - cam_obj.bckgr
+        # img[..., i] = cam_obj.last_frame
+        img[..., i] = cam_obj.last_frame - bckgr
 
         aperture_power[i] = np.sum(img[..., i]) / (np.size(img[..., i]) * exp_time)
 
         fig = plt.figure()
-        plt.subplot(121), plt.imshow(img[..., i], cmap='inferno', vmax=10000)
+        plt.subplot(131), plt.imshow(img[..., i], cmap='inferno', vmax=1000)
         plt.colorbar()
         plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
-        plt.subplot(122), plt.imshow(masked_phase, cmap='inferno')
+        plt.subplot(132), plt.imshow(masked_phase, cmap='inferno')
         plt.colorbar()
         plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
+        plt.subplot(133), plt.imshow(cam_obj.last_frame, cmap='inferno')
+        plt.colorbar()
+        plt.title('cam_obj.last_frame')
         plt.show()
         # plt.show(block=False)
         # time.sleep(2)

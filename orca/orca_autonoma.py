@@ -15,6 +15,8 @@ class Camera():
         self.last_frame = np.zeros((2048, 2048))
         self.integration_mode = False
 
+        self.bckgr = np.zeros((2048, 2048))
+
     @abc.abstractmethod
     def run(self):
         pass
@@ -118,7 +120,6 @@ class BaseHamamatsu(Camera):
         self.img_sz_y = int(np.floor(self.cam_y / self.bin_sz))
         self.img_sz_x = int(np.floor(self.cam_x / self.bin_sz))
         self.last_frame = np.zeros((self.img_sz_y, self.img_sz_x))
-        self.bckgr = np.zeros((self.img_sz_y, self.img_sz_x))
         self.res = (2048, 2048)
         self.roi = [0, 0, 2048, 2048]
 
