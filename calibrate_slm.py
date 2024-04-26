@@ -10,7 +10,8 @@ import error_metrics as m, patterns as pt, fitting as ft
 import scipy.optimize as opt
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-
+from peripheral_instruments.thorlabs_shutter import shutter as sh
+from colorama import Fore, Style  # , Back
 
 def find_camera_position(slm_disp_obj, cam_obj, pms_obj, lin_phase, exp_time=100, aperture_diameter=25, roi=[500, 500]):
     """
@@ -33,13 +34,30 @@ def find_camera_position(slm_disp_obj, cam_obj, pms_obj, lin_phase, exp_time=100
     slm_phase = pt.init_phase(zeros, slm_disp_obj, pms_obj, lin_phase=lin_phase)
     circ_aperture = pt.circ_mask(zeros, 0, 0, aperture_diameter / 2)
 
-
+    #
     # fig = plt.figure()
-    # plt.imshow(slm_phase * circ_aperture, cmap='inferno')
-    # # plt.imshow(slm_phase, cmap='inferno')
+    # # plt.imshow(slm_phase * circ_aperture, cmap='inferno')
+    # plt.imshow(slm_phase, cmap='inferno')
     # plt.colorbar()
     # plt.title('slm_phase * circ_aperture')
     # plt.show()
+    #
+    # fig = plt.figure()
+    # # plt.imshow(slm_phase * circ_aperture, cmap='inferno')
+    # plt.imshow(np.flipud(np.fliplr(slm_phase)), cmap='inferno')
+    # plt.colorbar()
+    # plt.title('slm_phase * circ_aperture')
+    # plt.show()
+    #
+    # fig = plt.figure()
+    # # plt.imshow(slm_phase * circ_aperture, cmap='inferno')
+    # plt.imshow(np.fliplr(slm_phase), cmap='inferno')
+    # plt.colorbar()
+    # plt.title('slm_phase TRANS')
+    # plt.show()
+
+    slm_phase = np.flipud(np.fliplr(slm_phase))
+
 
     # Display phase pattern on SLM
     slm_disp_obj.display(slm_phase)
@@ -53,13 +71,13 @@ def find_camera_position(slm_disp_obj, cam_obj, pms_obj, lin_phase, exp_time=100
     cam_obj.take_image()
     img = cam_obj.last_frame
 
-    # fig = plt.figure()
-    # plt.imshow(img, cmap='inferno', vmax=1000)
-    # plt.colorbar()
-    # plt.title('slm_phase * circ_aperture IMG')
-    # plt.show()
+    fig = plt.figure()
+    plt.imshow(img, cmap='inferno', vmax=1000)
+    plt.colorbar()
+    plt.title('slm_phase * circ_aperture IMG')
+    plt.show()
 
-    cam_roi_pos = [1400, 175]
+    cam_roi_pos = [1400, 1550]
     cam_roi_sz = [300, 300]
     cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
                         int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
@@ -155,6 +173,7 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     lin_phase = np.array([-spot_pos, -spot_pos])
     slm_phase = pt.init_phase(np.zeros((aperture_width, aperture_width)), slm_disp_obj, pms_obj, lin_phase=lin_phase)
     # slm_phase = np.remainder(slm_phase, 2 * np.pi)
+    slm_phase = np.flipud(np.fliplr(slm_phase))
     slm_idx = get_aperture_indices(aperture_number, aperture_number, border_x, npix + border_x, 0, npix, aperture_width,
                                    aperture_width)
 
@@ -211,14 +230,31 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
     # cam_obj.start(aperture_number ** 2)
     # cam_obj.num = aperture_number ** 2
-    cam_obj.num = aperture_number
-    cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
+    # cam_obj.num = aperture_number
+    # cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
+
+    print(Fore.LIGHTGREEN_EX + "record background" + Style.RESET_ALL)
+    # close shutter
+    sh.shutter_state()
+
+    time.sleep(0.4)
+    if sh.shut_state == 1:
+        sh.shutter_enable()
+
+    frame_num = 50
+    cam_obj.take_average_image(frame_num)
+    cam_obj.bckgr = cam_obj.last_frame
+    # open shutter
+    sh.shutter_enable()
+    time.sleep(0.4)
 
     img = np.zeros((ny, nx, aperture_number ** 2))
     # img = np.zeros((roi[1], roi[0], aperture_number ** 2))
     aperture_power = np.zeros(aperture_number ** 2)
 
     for i in range(aperture_number ** 2):
+        i=aperture_number**2 // 2
+        i=i+4
         print(i)
         masked_phase = np.copy(zeros_full)
         masked_phase[slm_idx[0][i]:slm_idx[1][i], slm_idx[2][i]:slm_idx[3][i]] = slm_phase
@@ -227,18 +263,22 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
         # img[..., i] = cam_obj.get_image(int(exp_time))
 
-        cam_obj.take_image()
-        img[..., i] = cam_obj.last_frame
+        cam_obj.take_average_image(frame_num)
+        img[..., i] = cam_obj.last_frame - cam_obj.bckgr
 
         aperture_power[i] = np.sum(img[..., i]) / (np.size(img[..., i]) * exp_time)
 
         fig = plt.figure()
-        plt.imshow(img[..., i], cmap='inferno')
+        plt.subplot(121), plt.imshow(img[..., i], cmap='inferno', vmax=10000)
         plt.colorbar()
         plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
-        plt.show(block=False)
-        time.sleep(1.4)
-        plt.close(fig)
+        plt.subplot(122), plt.imshow(masked_phase, cmap='inferno')
+        plt.colorbar()
+        plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
+        plt.show()
+        # plt.show(block=False)
+        # time.sleep(2)
+        # plt.close(fig)
 
 
     # cam_obj.stop()

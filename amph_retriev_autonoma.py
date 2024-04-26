@@ -21,6 +21,8 @@ import orca.orca_autonoma as Cam
 # from orca.hamamatsu_camera import n_cameras as numb_cam
 from slm.slm_hama_amphase import slm
 from slm.phase_generator import phagen as phuzGen
+from peripheral_instruments.thorlabs_shutter import shutter as sh
+from colorama import Fore, Style  # , Back
 
 exp = 100
 params = {'exposure': exp/1000, "initCam": True,
@@ -66,8 +68,12 @@ measure_slm_phase = True       # Measure the constant phase at the SLM?
 
 "Measuring the constant intensity and phase at the SLM"
 if measure_slm_intensity is True:
+    # i_path = clb.measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj,
+    #                                    30, 32, 10000,
+    #                                    256, np.asarray(cam_roi_sz[0]))
+
     i_path = clb.measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj,
-                                       30, 32, 10000,
+                                       10, 96, 10000,
                                        256, np.asarray(cam_roi_sz[0]))
     pms_obj.i_path = i_path
 # if measure_slm_phase is True:
