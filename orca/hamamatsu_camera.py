@@ -313,10 +313,10 @@ class HamamatsuCamera(object):
 
             self.setPropertyValue("sensor_mode", 2)
             self.getPropertyValue("sensor_mode")
-            self.setPropertyValue("subarray_mode", "ON")
+            self.setPropertyValue("subarray_mode", "OFF")
             self.getPropertyValue("subarray_mode")
-            self.setPropertyValue("extraction_mode", 2)
-            self.getPropertyValue("extraction_mode")
+            # self.setPropertyValue("extraction_mode", 2)
+            # self.getPropertyValue("extraction_mode")
 
             # Get camera max width, height.
             # self.max_width = self.getPropertyValue("image_width")[0]

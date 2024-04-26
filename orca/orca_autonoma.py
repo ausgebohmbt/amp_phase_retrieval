@@ -163,9 +163,11 @@ class BaseHamamatsu(Camera):
 
         self.hcam.stopAcquisition()
         if self.roi_is[0] != 0 or self.roi_is[1] != 0:
+            print("here")
             hpos_the = hpos + self.roi_is[0]
             vpos_the = vpos + self.roi_is[1]
         else:
+            print("there")
             hpos_the = hpos
             vpos_the = vpos
 
@@ -177,7 +179,7 @@ class BaseHamamatsu(Camera):
         #     print('there, {}'.format(vsize + vpos_the))
         #     vsize = 2048 - vpos_the
 
-        # print("roi pre mod: hpos, vpos, hsize, vsize: {}, {}, {}, {}".format(hpos_the, vpos_the, hsize, vsize))
+        print("roi pre mod: hpos, vpos, hsize, vsize: {}, {}, {}, {}".format(hpos_the, vpos_the, hsize, vsize))
 
 
         if hsize % 4 != 0:
@@ -189,14 +191,15 @@ class BaseHamamatsu(Camera):
         if vpos_the % 4 != 0:
             vpos_the = vpos_the - (vpos_the % 4) + 4
 
-        # print("roi in mod: hpos, vpos, hsize, vsize: {}, {}, {}, {}".format(hpos_the, vpos_the, hsize, vsize))
+        print("roi in mod: hpos, vpos, hsize, vsize: {}, {}, {}, {}".format(hpos_the, vpos_the, hsize, vsize))
         # print("the hpos, vpos, hsize, vsize, {}, {}, {}, {}".format(hpos_the, vpos_the, hsize, vsize))
 
         self.hcam.setPropertyValue("subarray_hpos", hpos_the)
         self.hcam.setPropertyValue("subarray_vpos", vpos_the)
         self.hcam.setPropertyValue("subarray_hsize", hsize)
         self.hcam.setPropertyValue("subarray_vsize", vsize)
-        # self.hcam.setPropertyValue("subarray_mode", "ON")  # this is set in the low-level script in "setSubArrayMode"
+        self.hcam.setPropertyValue("subarray_mode", "ON")  # this is set in the low-level script in "setSubArrayMode"
+        self.hcam.getPropertyValue("subarray_mode")  # this is set in the low-level script in "setSubArrayMode"
 
         # set the current values to self
         self.roi_is = [hpos_the, vpos_the, hsize, vsize]
@@ -401,7 +404,7 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
             self._acquire = True
             self.hcam.setACQMode('fixed_length', number_frames=self.num)
             # print("cam will acquire {} frames".format(self.num))
-            self.take_image()
+            # self.take_image()
 
     def end(self):
         """ends the thread after acquisition is complete"""
