@@ -1,20 +1,16 @@
-import gui_standalone.hamamatsu_camera as hc
+import orca.hamamatsu_camera as hc
 import abc
 import numpy as np
 import time
-# import traceback  # fixme: whats this????
-from PyQt5 import QtCore
 
 
-class Camera(QtCore.QThread):
+class Camera():
     """Base class for all cameras"""
     __metaclass__ = abc.ABCMeta
     # def signals to trigger main
-    im = QtCore.pyqtSignal(np.ndarray)
-    tmp = QtCore.pyqtSignal(list)
 
-    def __init__(self, parent=None):
-        super(Camera, self).__init__(parent)
+    def __init__(self):
+        # super(Camera, self).__init__(parent)
         self.num = 1
         self.last_frame = np.zeros((2048, 2048))
         self.integration_mode = False
@@ -75,70 +71,12 @@ class Camera(QtCore.QThread):
         # images = np.stack([acqr() for _ in range(num)])
         return images.mean(axis=0)
 
-    @abc.abstractmethod
-    def take_integrated_image(self, num: int, acq_intgra: int):
-        """Capture and return the averaged sum of a number of captures.
-
-        Parameters
-        ----------
-        num : int
-            The number of images to capture and average.
-
-        acq_intgra: int
-            The number of images to capture and average times the frames of each acquisition
-
-        Returns
-        -------
-        np.ndarray
-            The averaged image as a NumPy array.
-        """
-        pass
-
     def show_image(self, lognorm=False) -> None:
         pass
-        # """
-        # Capture an image and display it using a plotting function. To be used inside
-        # a jupyter notebook.
-        #
-        # Parameters
-        # ----------
-        # lognorm : bool, optional
-        #     Whether to apply logarithmic normalization to the image. Default is True.
-        # """
-        # # TODO: add option to crop image instead of setting roi
-        # image = self.take_image()
-        #
-        # if hasattr(self, "params"):
-        #     print("Parametes:")
-        #     print("\n".join([f"\t{key}={val}" for key, val in self.params.items()]))
-        # ymax, xmax = argmax(image)
-        # print(f"Pixel stats:\n\t min={image.min():.4f}, max={image.max():.4f}, argmax={xmax, ymax}")
-        # plot_image(image, lognorm)
 
     # NOTE not all cameras might have a ROI feature, need to redesign if that's the case
     def center_to_max(self, shape: tuple[int, int]) -> None:
         pass
-        # """Sets the region of interest (ROI) with the given shape around the globally maximal pixel."""
-        # # Set region to None to find globally maximal pixel
-        # self.region = None
-        # img = self.take_image()
-        # offset_x, offset_y, _, _ = self.region
-        # # Find relative argmax
-        # max_y, max_x = argmax(img)
-        # # Compute absolute argmax
-        # max_x += offset_x
-        # max_y += offset_y
-        # # Find center
-        # width, height = shape
-        # center_x, center_y = offset_x + width // 2, offset_y + height // 2
-        # # Compute translation vector
-        # transl_x, transl_y = max_x - center_x, max_y - center_y
-        # # Translate offset
-        # offset_x += transl_x
-        # offset_y += transl_y
-        #
-        # self.region = offset_x, offset_y, width, height
-        # print('tries to center da beam')
 
 
 class BaseHamamatsu(Camera):
@@ -146,7 +84,7 @@ class BaseHamamatsu(Camera):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, parent=None, **kwargs):
-        super(Camera, self).__init__(parent)
+        super(Camera, self).__init__()
         if 'exposure' not in kwargs.keys():
             raise KeyError('No exposure value specified')
         print("initializing camera base")
@@ -157,9 +95,6 @@ class BaseHamamatsu(Camera):
         self.bin_sz = 1
         self.hcam = hc.HamamatsuCameraMR(camera_numb=cam_no, initCam=self.initCamState, trig_mODe=self.trigg_mode)
         self.sensor_temp = 42
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.sensor_temp_is)  # this is the timer signaling for image update
-        self.timer.start(1000)
 
         self.hcam.getPropertyValue("trigger_mode")
         self.hcam.getPropertyValue("trigger_source")
@@ -426,14 +361,9 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
                 except Exception as e:
                     print(e)
 
-            self.im.emit(ims.astype(np.float64))  # this used as the preview, its emitted and grabbed by the main thread
-            # print("img emitted {}".format(ims.shape))
             self.last_frame = ims.astype(np.float64)  # this is what me_tropo_lys is using
             self._acquire = False
-            self._show_preview = False
-            # self.hcam.stopAcquisition()
-            # self.end()
-            # print("got image")
+            self.hcam.stopAcquisition()
         else:
             print("acqui FALSE")
 
@@ -460,22 +390,6 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
         # todo: put emit here to get correct scale
         # print("averaged max {}".format(np.max(images)))
         self.num = 1
-        return images
-
-    def take_integrated_image(self, num: int, acq_intgr: int):
-        # fixme: cp description from base above
-        """.
-        """
-        print("getting average of {} integrated images, a ha a".format(num))
-        print("{} image frames each".format(acq_intgr))
-        self.num = num * acq_intgr
-        self.mode = "Acq"
-        self.start()
-        self.wait()
-        # print("last frame max {}".format(np.max(self.last_frame)))
-        images = self.last_frame / num
-        # print("averaged max {}".format(np.max(images)))
-        self.num = 1 * acq_intgr  # restores frame number
         return images
 
     def run(self):

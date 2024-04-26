@@ -6,7 +6,7 @@ import os
 import time
 import numpy as np
 import hardware as hw
-from intense_phase_retrieval import error_metrics as m, patterns as pt, fitting as ft
+import error_metrics as m, patterns as pt, fitting as ft
 import scipy.optimize as opt
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable

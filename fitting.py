@@ -3,7 +3,7 @@ This module contains functions for curve fitting.
 """
 
 import numpy as np
-from intense_phase_retrieval import patterns as pt
+import patterns as pt
 import scipy
 import scipy.optimize as opt
 
