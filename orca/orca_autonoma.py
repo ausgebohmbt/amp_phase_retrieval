@@ -118,6 +118,8 @@ class BaseHamamatsu(Camera):
         self.img_sz_y = int(np.floor(self.cam_y / self.bin_sz))
         self.img_sz_x = int(np.floor(self.cam_x / self.bin_sz))
         self.last_frame = np.zeros((self.img_sz_y, self.img_sz_x))
+        self.res = (2048, 2048)
+        self.roi = [0, 0, 2048, 2048]
 
     # todo: mk property/Up-setter
     def bin_value(self, new_bin):
@@ -345,30 +347,19 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
         """the wait function should be properly implemented to get the optimum speed out of
         the multiple frame collection, the INTERNAL_FRAMEINTERVAL function should be useful
          to be implemented for this""" "DCAM_IDPROP_INTERNAL_FRAMEINTERVAL"
-        if self._acquire:
-            ims = np.zeros((self.img_sz_y, self.img_sz_x))
-            self.hcam.startAcquisition()
-            time.sleep(self.exposure[0] * self.num + 0.0249 * (self.num + 2))  # frame_interval is 0.0249,
-            # added 2 times more because in the limit of 1-2ms exposures frames were lost
-            the_frames = self.get_all_frames()
-            for i in range(self.num):
-                try:
-                    img = np.reshape(self.get_grey_values_o_frames(the_frames, i), (self.img_sz_y, self.img_sz_x))
-                    # print("img_sz y, x {}, {}".format(self.img_sz_y, self.img_sz_x))
-                    # print("subarr, {}".format(self.hcam.getPropertyValue("subarray_mode")))
-
-                    # img = np.fliplr(img)  # fixme: commented this out for roi to work proper, but in Preview .T is
-                    #  still used because of how setImage works, if need be changed back jah needs reconfigure roi input
-                    #  as abs(2048-hpos) [I sink]
-                    ims = np.add(ims,img)
-                except Exception as e:
-                    print(e)
-
-            self.last_frame = ims.astype(np.float64)  # this is what me_tropo_lys is using
-            self._acquire = False
-            self.hcam.stopAcquisition()
-        else:
-            print("acqui FALSE")
+        ims = np.zeros((self.img_sz_y, self.img_sz_x))
+        self.hcam.startAcquisition()
+        time.sleep(self.exposure[0] * self.num + 0.0249 * (self.num + 2))  # frame_interval is 0.0249,
+        # added 2 times more because in the limit of 1-2ms exposures frames were lost
+        the_frames = self.get_all_frames()
+        for i in range(self.num):
+            try:
+                img = np.reshape(self.get_grey_values_o_frames(the_frames, i), (self.img_sz_y, self.img_sz_x))
+                ims = np.add(ims,img)
+            except Exception as e:
+                print(e)
+        self.last_frame = ims.astype(np.float64)
+        self.hcam.stopAcquisition()
 
     def take_average_image(self, num: int):
         """Capture and return an average image from a number of captures.
@@ -386,14 +377,11 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
         print("getting average of {} images, mpesa".format(num))
         self.num = num
         self.mode = "Acq"
-        self.start()
-        self.wait()
-        # print("last frame max {}".format(np.max(self.last_frame)))
-        images = self.last_frame / num
-        # todo: put emit here to get correct scale
-        # print("averaged max {}".format(np.max(images)))
+        self.hcam.setACQMode('fixed_length', number_frames=self.num)
+        self.take_image()
+        image_aver = self.last_frame / num
         self.num = 1
-        return images
+        return image_aver
 
     def run(self):
         if self.mode == "Live":

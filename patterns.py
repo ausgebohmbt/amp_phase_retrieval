@@ -378,6 +378,7 @@ def init_phase(img, slm_disp_obj, pms_obj, lin_phase=None, quad_phase=None, lin_
         pix_x, pix_y = lin_phase
         mx = np.pi * pix_x / slm_disp_obj.res[0]
         my = np.pi * pix_y / slm_disp_obj.res[0]
+        print('pixel methOD')
     if lin_method == 'angles':
         alpha_x, alpha_y = lin_phase
         mx = np.tan(alpha_x) * pms_obj.k * slm_disp_obj.pitch

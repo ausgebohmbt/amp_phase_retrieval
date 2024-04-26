@@ -19,14 +19,14 @@ from experiment import Params#, Camera, SlmDisp
 
 import orca.orca_autonoma as Cam
 # from orca.hamamatsu_camera import n_cameras as numb_cam
-from slm.slm_hama_4gui import slm
+from slm.slm_hama_amphase import slm
 from slm.phase_generator import phagen as phuzGen
 
 exp = 100
 params = {'exposure': exp/1000, "initCam": True,
           "came_numb": 0, "trig_mODe": 1}
-phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
-phuzGen.linear_grating()
+# phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
+# phuzGen.linear_grating()
 
 pms_obj = Params()
 cam_obj = Cam.LiveHamamatsu(**params)
@@ -35,46 +35,41 @@ slm_disp_obj = slm
 # slm_disp_obj = SlmDisp(np.array([1024, 1280]), 12.5e-6)         # fixme: pitch used meshgrid
 
 "upload phuz"
-slm.current_phase = phuzGen.final_phuz
-slm.load_phase(slm.current_phase)
+# slm.current_phase = phuzGen.final_phuz
+# slm.load_phase(slm.current_phase)
 
 "init cam"
 cam_obj.mode = "Acq"
 cam_obj.num = 1
 cam_obj.bin_sz = 1
-cam_roi_pos = (936, 942)
-cam_roi_sz = (788, 182)
-cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
-                    int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
+# cam_roi_pos = (936, 942)
+# cam_roi_sz = (788, 182)
+cam_roi_pos = [175, 1400]
+cam_roi_sz = [300, 300]
+# cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
+#                     int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
 
-cam_obj._acquire = True
+# "take test img"
+# cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
+#                     int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
 cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
-cam_obj.take_image()
-imgzaz = cam_obj.last_frame
-
-fig = plt.figure()
-plt.imshow(imgzaz, cmap='inferno', vmax=50000)
-plt.colorbar()
-plt.show()
-
-# cam_obj.clear_roi()
-# cam_obj._acquire = True
-# cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
 # cam_obj.take_image()
 # imgzaz = cam_obj.last_frame
-
+#
 # fig = plt.figure()
-# plt.imshow(imgzaz, cmap='inferno', vmax=50000)
+# plt.imshow(imgzaz, cmap='inferno', vmax=1000)
 # plt.colorbar()
 # plt.show()
 
-# measure_slm_intensity = True   # Measure the constant intensity at the SLM (laser beam profile)?
-# measure_slm_phase = True       # Measure the constant phase at the SLM?
-#
-# "Measuring the constant intensity and phase at the SLM"
-# if measure_slm_intensity is True:
-#     i_path = clb.measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, 30, 32, 10000, 256, 300)
-#     pms_obj.i_path = i_path
+measure_slm_intensity = True   # Measure the constant intensity at the SLM (laser beam profile)?
+measure_slm_phase = True       # Measure the constant phase at the SLM?
+
+"Measuring the constant intensity and phase at the SLM"
+if measure_slm_intensity is True:
+    i_path = clb.measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj,
+                                       30, 32, 10000,
+                                       256, np.asarray(cam_roi_sz[0]))
+    pms_obj.i_path = i_path
 # if measure_slm_phase is True:
 #     phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 30, 16, 64, 40000, 256, roi_min_x=2,
 #                                          roi_min_y=2, roi_n=26)

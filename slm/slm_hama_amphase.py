@@ -64,6 +64,7 @@ class SlmDisplay(SLM_clash):
         # """ phase functions init variables"""
         self.slmX = 1272
         self.slmY = 1024
+        self.res = (self.slmY, self.slmX)
         self.current_phase = np.zeros((self.slmY, self.slmX))
 
     def connect(self) -> int:
@@ -115,7 +116,7 @@ class SlmDisplay(SLM_clash):
         self.slmffi.Check_Temp(self.bID, HeadTemp, CBTemp)
         return HeadTemp, CBTemp
 
-    def load_phase(self, image) -> None:
+    def display(self, image) -> None:
         """uploads uint8 phase to lcos
 
         Returns
@@ -140,8 +141,8 @@ class SlmDisplay(SLM_clash):
         """upload, the func itself"""
         self.slmffi.Write_FMemArray(bID, ArrayIn, ArraySize, XPixel, YPixel, SlotNo)
         time.sleep(0.1)  # fixme: can this be reduced?
-        # print("uploaded")
-        self.end()
+        print("uploaded")
+        # self.end()
         # print("loaded phuz")
 
     def run(self):

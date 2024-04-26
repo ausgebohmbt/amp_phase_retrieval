@@ -33,16 +33,61 @@ def find_camera_position(slm_disp_obj, cam_obj, pms_obj, lin_phase, exp_time=100
     slm_phase = pt.init_phase(zeros, slm_disp_obj, pms_obj, lin_phase=lin_phase)
     circ_aperture = pt.circ_mask(zeros, 0, 0, aperture_diameter / 2)
 
+
+    # fig = plt.figure()
+    # plt.imshow(slm_phase * circ_aperture, cmap='inferno')
+    # # plt.imshow(slm_phase, cmap='inferno')
+    # plt.colorbar()
+    # plt.title('slm_phase * circ_aperture')
+    # plt.show()
+
     # Display phase pattern on SLM
-    slm_disp_obj.display(slm_phase * circ_aperture)
+    slm_disp_obj.display(slm_phase)
+    # slm_disp_obj.display(slm_phase * circ_aperture)
 
     # Take camera image
-    cam_obj.start()
-    img = cam_obj.get_image(exp_time)
-    cam_obj.stop()
+    # cam_obj.start()
+    # img = cam_obj.take_image()
+    # img = cam_obj.get_image(exp_time)
+    # cam_obj.stop()
+    cam_obj.take_image()
+    img = cam_obj.last_frame
+
+    # fig = plt.figure()
+    # plt.imshow(img, cmap='inferno', vmax=1000)
+    # plt.colorbar()
+    # plt.title('slm_phase * circ_aperture IMG')
+    # plt.show()
+
+    cam_roi_pos = [1400, 175]
+    cam_roi_sz = [300, 300]
+    cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
+                        int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
+
+    cam_obj.take_image()
+    img = cam_obj.last_frame
+
+    # fig = plt.figure()
+    # plt.imshow(img, cmap='inferno', vmax=1000)
+    # plt.colorbar()
+    # plt.title('ROI IMG')
+    # plt.show()
+
 
     # Mask to crop camera image (removes the zeroth-order diffraction spot)
     crop_mask = pt.rect_mask(img, 0, 0, roi[0], roi[1])
+
+    # fig = plt.figure()
+    # plt.imshow(crop_mask, cmap='inferno')
+    # plt.title('crop_mask')
+    # plt.colorbar()
+    # plt.show()
+    #
+    # fig = plt.figure()
+    # plt.imshow(img * crop_mask, cmap='inferno', vmax=1000)
+    # plt.title('img * crop_mask')
+    # plt.colorbar()
+    # plt.show()
 
     # Fit Gaussian to camera image
     p_opt, p_err = ft.fit_gaussian(img * crop_mask)
@@ -95,7 +140,7 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     :param roi_width: Width of the region of interest on the camera [camera pixels].
     :return:
     """
-    roi_mem = cam_obj.roi
+    roi_mem = cam_obj.roi_is
     date_saved = time.strftime('%y-%m-%d_%H-%M-%S', time.localtime())
     path = pms_obj.data_path + date_saved + '_' + 'measure_slm_intensity'
     os.mkdir(path)
@@ -118,45 +163,86 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     phi_centre = np.zeros_like(zeros)
     phi_centre[slm_idx[0][i]:slm_idx[1][i], slm_idx[2][i]:slm_idx[3][i]] = slm_phase
 
+    # figph = plt.figure()
+    # plt.imshow(phi_centre, cmap='inferno')
+    # plt.colorbar()
+    # plt.title("phi_centre")
+    # plt.show()
+
+
     slm_disp_obj.display(phi_centre)
 
     # Take camera image
-    cam_obj.start()
-    measure_slm_intensity.img_exp_check = cam_obj.get_image(exp_time)
-    cam_obj.stop()
+    # cam_obj.start()
+    cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
+    cam_obj.take_image()
+    imgzaz = cam_obj.last_frame
+
+    # fig = plt.figure()
+    # plt.imshow(imgzaz, cmap='inferno', vmax=1000)
+    # plt.colorbar()
+    # plt.title("phi_centre IMG")
+    # plt.show()
+    # measure_slm_intensity.img_exp_check = cam_obj.get_image(exp_time)
+    measure_slm_intensity.img_exp_check = cam_obj.take_image()
 
     # Find Camera position with respect to SLM
     popt_clb, img_cal = find_camera_position(slm_disp_obj, cam_obj, pms_obj, lin_phase, exp_time=exp_time / 10,
                                              aperture_diameter=npix // 20, roi=[400, 400])
 
-    ny, nx = cam_obj.res
+    # ny, nx = cam_obj.res
+    ny, nx = img_cal.shape
     calib_pos_x = int(popt_clb[0] + nx // 2)
     calib_pos_y = int(popt_clb[1] + ny // 2)
 
     plt.figure()
-    plt.imshow(img_cal, cmap='turbo')
-    plt.plot(calib_pos_x, calib_pos_y, 'wx')
+    plt.imshow(img_cal, cmap='inferno', vmax=1000)
+    plt.plot(calib_pos_x, calib_pos_y, 'wx', color='g')
     plt.title('Camera image and fitted spot position')
+    plt.show()
 
     # Take camera images
-    roi = [roi_width, roi_width, int((calib_pos_x - roi_width / 2) // 2 * 2),
-           int((calib_pos_y - roi_width / 2) // 2 * 2)]
-    cam_obj.roi = roi
-    cam_obj.start(aperture_number ** 2)
+    # print("roi_width, {}".format(roi_width))
+    # print("int((calib_pos_y - roi_width / 2) // 2 * 2), {}".format(int((calib_pos_y - roi_width / 2) // 2 * 2)))
+    # print("int((calib_pos_x - roi_width / 2) // 2 * 2), {}".format(int((calib_pos_x - roi_width / 2) // 2 * 2)))
+    # roi = [roi_width, roi_width, int((calib_pos_x - roi_width / 2) // 2 * 2),
+    #        int((calib_pos_y - roi_width / 2) // 2 * 2)]
+    # cam_obj.roi = roi
 
-    img = np.zeros((roi[1], roi[0], aperture_number ** 2))
+    # cam_obj.start(aperture_number ** 2)
+    # cam_obj.num = aperture_number ** 2
+    cam_obj.num = aperture_number
+    cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
+
+    img = np.zeros((ny, nx, aperture_number ** 2))
+    # img = np.zeros((roi[1], roi[0], aperture_number ** 2))
     aperture_power = np.zeros(aperture_number ** 2)
 
     for i in range(aperture_number ** 2):
+        print(i)
         masked_phase = np.copy(zeros_full)
         masked_phase[slm_idx[0][i]:slm_idx[1][i], slm_idx[2][i]:slm_idx[3][i]] = slm_phase
 
         slm_disp_obj.display(masked_phase)
 
-        img[..., i] = cam_obj.get_image(int(exp_time))
+        # img[..., i] = cam_obj.get_image(int(exp_time))
+
+        cam_obj.take_image()
+        img[..., i] = cam_obj.last_frame
+
         aperture_power[i] = np.sum(img[..., i]) / (np.size(img[..., i]) * exp_time)
-    cam_obj.stop()
-    cam_obj.roi = roi_mem
+
+        fig = plt.figure()
+        plt.imshow(img[..., i], cmap='inferno')
+        plt.colorbar()
+        plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
+        plt.show(block=False)
+        time.sleep(1.4)
+        plt.close(fig)
+
+
+    # cam_obj.stop()
+    # cam_obj.roi = roi_mem
 
     np.save(path + '//img', img)
     np.save(path + '//aperture_power', aperture_power)
@@ -265,9 +351,9 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
     slm_disp_obj.display(phi_int)
 
-    cam_obj.start()
+    # cam_obj.start()
     measure_slm_wavefront.img_exposure_check = cam_obj.get_image(exp_time)
-    cam_obj.stop()
+    # cam_obj.stop()
 
     # Load measured laser intensity profile
     laser_intensity_measured = np.load(pms_obj.i_path)
@@ -340,7 +426,7 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         dt[i] = time.time() - t_start
         print(dt[i])
         print(i)
-    cam_obj.stop()
+    # cam_obj.stop()
     cam_obj.roi = roi_mem
     t = np.cumsum(dt)
 
