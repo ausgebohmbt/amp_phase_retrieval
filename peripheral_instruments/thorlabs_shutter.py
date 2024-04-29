@@ -34,6 +34,8 @@ class Shutter():
         # warning says read is not available but it does not work without it
         self.my_instrument.query('ens?')
         self.shut_state = int(self.my_instrument.read())  # value is returned as str
+        print(self.coloz[self.shut_state] + "shutter is found {}".format(self.string_state[self.shut_state])
+              + Style.RESET_ALL)
         # self.end()
 
     def shutter_enable(self):

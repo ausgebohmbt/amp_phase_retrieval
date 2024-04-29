@@ -207,6 +207,20 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     phi_centre = normalize(phi_centre)*200
     slm_disp_obj.display(phi_centre)
 
+
+    # open shutter
+    sh.shutter_state()
+
+    time.sleep(0.1)
+    if sh.shut_state == 0:
+        sh.shutter_enable()
+    time.sleep(0.4)
+
+    sh.shutter_state()
+
+
+
+
     # Take camera image
     # cam_obj.start()
     cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
@@ -217,14 +231,16 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     if plo_che:
         fig = plt.figure()
         # plt.imshow(imgzaz, cmap='inferno')
-        plt.imshow(imgzaz, cmap='inferno', vmax=1500)
+        plt.imshow(imgzaz, cmap='inferno', vmax=60000)
         plt.colorbar()
         plt.title("full IMG")
         plt.show()
 
 
-    cam_roi_pos = [650, 850]
-    cam_roi_sz = [400, 400]
+    # cam_roi_pos = [650, 850]
+    # cam_roi_sz = [400, 400]
+    cam_roi_pos = [780, 400]
+    cam_roi_sz = [160, 160]
     cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
                         int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
 
@@ -291,8 +307,12 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     time.sleep(0.4)
     if sh.shut_state == 1:
         sh.shutter_enable()
+    time.sleep(0.4)
 
-    frame_num = 4
+    sh.shutter_state()
+
+
+    frame_num = 1
     cam_obj.take_average_image(frame_num)
     cam_obj.bckgr = cam_obj.last_frame
     print(cam_obj.bckgr.shape)
@@ -314,11 +334,12 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     img = np.zeros((bckgr.shape[0], bckgr.shape[1], aperture_number ** 2))
     # img = np.zeros((roi[1], roi[0], aperture_number ** 2))
     aperture_power = np.zeros(aperture_number ** 2)
-    slm_phase = normalize(slm_phase)*200
+    # slm_phase = normalize(slm_phase)*200phi_centre
+    slm_phase = phi_centre[:aperture_width, :aperture_width]
     for i in range(aperture_number ** 2):
         # i = (aperture_number ** 2) // 2 - aperture_number // 2
         # i=i-7
-        print(i)
+        print("iter {} of {}".format(i, aperture_number ** 2))
         masked_phase = np.copy(zeros_full)
         bckgr = np.copy(bckgr)
         print(bckgr.shape)
@@ -337,7 +358,7 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         print(aperture_power[i])
 
         # fig = plt.figure()
-        # plt.subplot(121), plt.imshow(img[..., i], cmap='inferno', vmax=500)
+        # plt.subplot(121), plt.imshow(img[..., i], cmap='inferno', vmax=150)
         # plt.colorbar()
         # plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
         # plt.subplot(122), plt.imshow(masked_phase, cmap='inferno')

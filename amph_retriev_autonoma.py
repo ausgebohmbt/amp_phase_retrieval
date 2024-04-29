@@ -24,7 +24,7 @@ from slm.phase_generator import phagen as phuzGen
 from peripheral_instruments.thorlabs_shutter import shutter as sh
 from colorama import Fore, Style  # , Back
 
-exp = 100
+exp = 500
 params = {'exposure': exp/1000, "initCam": True,
           "came_numb": 0, "trig_mODe": 1}
 # phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
@@ -73,7 +73,7 @@ if measure_slm_intensity is True:
     #                                    256, np.asarray(cam_roi_sz[0]))
 
     i_path = clb.measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj,
-                                       30, 32, exp/1000,
+                                       15, 64, exp/1000,
                                        256, np.asarray(cam_roi_sz[0]))
     pms_obj.i_path = i_path
 # if measure_slm_phase is True:

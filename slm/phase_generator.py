@@ -212,13 +212,39 @@ class PhaseGen:
         # plt.show()
         # grat = grr[:self.spin_array_sz[0], :self.spin_array_sz[1]]
 
-        grat = grr[:self.slmY, :self.slmX]
+        agrr_x = grr[:self.slmY, :self.slmX]
+
         # plt.imshow(grat, cmap='inferno')
         # plt.colorbar()
         # plt.title("grating full")
         # plt.show()
 
-        # self.grat = center_overlay(self.slmY, self.slmY, grat)
+        if sz_x >= sz_y:
+            sz = sz_x
+        elif sz_y > sz_x:
+            sz = sz_y
+        else:
+            sz = sz_x
+        if div != 0:
+            x = np.linspace(0, sz, sz)
+            x = np.mod(np.floor(x), div)/div
+            # repeat elements K times
+            res = []
+            for i in x:
+                for ele in range(width):
+                    res.append(i)
+
+            # grr = np.tile(res, (1, len(res)))
+            grr = np.tile(res, (len(res), 1))
+            # grr = np.tile(x, (sz, 1))
+        elif div == 0:
+            grr = np.zeros((sz, sz))
+        # trans it and crop et
+        grr_y = grr.T
+        agrr_y = grr_y[:sz_y*width, :sz_x*width]
+
+        grat = agrr_y[:self.slmY, :self.slmX] + agrr_x[:self.slmY, :self.slmX]
+
         self.grat = grat
 
         # self.grat = grr[:self.slmY, :self.slmY]
