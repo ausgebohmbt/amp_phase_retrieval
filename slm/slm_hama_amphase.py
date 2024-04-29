@@ -156,6 +156,15 @@ class SlmDisplay(SLM_clash):
         """ends the thread after phase upload"""
         super(SlmDisplay, self).end()
 
+    @property
+    def meshgrid_slm(self):
+        """
+        Calculates an x, y meshgrid using the pixel pitch and the native resolution of the SLM.
+        :return: x, y meshgrid [m].
+        """
+        x = np.arange(-self.slm_size[0] / 2, self.slm_size[0] / 2, self.pitch)
+        return np.meshgrid(x, x)
+
 
 # init slm com
 slm = SlmDisplay()

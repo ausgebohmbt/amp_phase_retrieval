@@ -453,21 +453,35 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     :return: Path to measured constant phase at the SLM.
     """
     
-    roi_mem = cam_obj.roi
+    # roi_mem = cam_obj.roi
     res_y, res_x = slm_disp_obj.res
     npix = np.min(slm_disp_obj.res)
     border_x = int(np.abs(res_x - res_y) // 2)
     zeros_full = np.zeros((npix, np.max(slm_disp_obj.res)))
+    #
+    # fl = pms_obj.fl
+    #
+    # lin_phase = np.array([-spot_pos, -spot_pos])
+    # slm_phase = pt.init_phase(zeros_full, slm_disp_obj, pms_obj, lin_phase=lin_phase)
+    #
+    # if benchmark is True:
+    #     phi_load = np.load(phi_load_path)
+    # else:
+    #     phi_load = np.zeros((aperture_number, aperture_number))
+    phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
+    phuzGen.linear_grating()
+    phi_centre = phuzGen.final_phuz
 
-    fl = pms_obj.fl
+    # figph = plt.figure()
+    # plt.imshow(phi_centre, cmap='inferno')
+    # plt.colorbar()
+    # plt.title("phi_centre")
+    # plt.show()
 
-    lin_phase = np.array([-spot_pos, -spot_pos])
-    slm_phase = pt.init_phase(zeros_full, slm_disp_obj, pms_obj, lin_phase=lin_phase)
+    phi_centre = normalize(phi_centre)*200
+    slm_disp_obj.display(phi_centre)
+    slm_phase = phi_centre[:aperture_width, :aperture_width]
 
-    if benchmark is True:
-        phi_load = np.load(phi_load_path)
-    else:
-        phi_load = np.zeros((aperture_number, aperture_number))
 
     slm_idx = get_aperture_indices(aperture_number, aperture_number, border_x, npix + border_x - 1, 0, npix - 1, aperture_width,
                                    aperture_width)
@@ -487,9 +501,9 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
     slm_disp_obj.display(phi_int)
 
-    # cam_obj.start()
-    measure_slm_wavefront.img_exposure_check = cam_obj.get_image(exp_time)
-    # cam_obj.stop()
+    # # cam_obj.start()
+    # measure_slm_wavefront.img_exposure_check = cam_obj.get_image(exp_time)
+    # # cam_obj.stop()
 
     # Load measured laser intensity profile
     laser_intensity_measured = np.load(pms_obj.i_path)
