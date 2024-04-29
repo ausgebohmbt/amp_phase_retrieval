@@ -64,8 +64,10 @@ class SlmDisplay(SLM_clash):
         # """ phase functions init variables"""
         self.slmX = 1272
         self.slmY = 1024
-        self.res = (self.slmY, self.slmX)
+        self.pitch = 12.5e-6
+        self.res = [self.slmY, self.slmX]
         self.current_phase = np.zeros((self.slmY, self.slmX))
+        self.slm_size = self.pitch * np.asarray(self.res)
 
     def connect(self) -> int:
         """opens communication with the slm
@@ -123,6 +125,8 @@ class SlmDisplay(SLM_clash):
         -------
         not a single thing
         """
+        # import matplotlib.pyplot as plt
+        # print("here we are")
         # plt.imshow(image, cmap="inferno")
         # plt.colorbar()
         # plt.show()

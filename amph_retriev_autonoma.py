@@ -24,7 +24,7 @@ from slm.phase_generator import phagen as phuzGen
 from peripheral_instruments.thorlabs_shutter import shutter as sh
 from colorama import Fore, Style  # , Back
 
-exp = 160
+exp = 100
 params = {'exposure': exp/1000, "initCam": True,
           "came_numb": 0, "trig_mODe": 1}
 # phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
