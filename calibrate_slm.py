@@ -467,20 +467,21 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     border_x = int(np.abs(res_x - res_y) // 2)
     zeros_full = np.zeros((npix, np.max(slm_disp_obj.res)))
     #
-    # fl = pms_obj.fl
+    fl = pms_obj.fl
     #
     # lin_phase = np.array([-spot_pos, -spot_pos])
     # slm_phase = pt.init_phase(zeros_full, slm_disp_obj, pms_obj, lin_phase=lin_phase)
     #
-    # if benchmark is True:
-    #     phi_load = np.load(phi_load_path)
-    # else:
-    #     phi_load = np.zeros((aperture_number, aperture_number))
+    if benchmark is True:
+        phi_load = np.load(phi_load_path)
+    else:
+        phi_load = np.zeros((aperture_number, aperture_number))
+    phuzGen.diviX = 10
     phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
     phuzGen.linear_grating()
     phi_centre = phuzGen.final_phuz
 
-    # figph = plt.figure()
+    # # figph = plt.figure()
     # plt.imshow(phi_centre, cmap='inferno')
     # plt.colorbar()
     # plt.title("phi_centre")
@@ -488,11 +489,12 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
     phi_centre = normalize(phi_centre)*200
     slm_disp_obj.display(phi_centre)
-    slm_phase = phi_centre[:aperture_width, :aperture_width]
+    # slm_phase = phi_centre[:aperture_width, :aperture_width]
+    slm_phase = phi_centre
 
+    slm_idx = get_aperture_indices(aperture_number, aperture_number, border_x, npix + border_x - 1, 0,
+                                   npix - 1, aperture_width, aperture_width)
 
-    slm_idx = get_aperture_indices(aperture_number, aperture_number, border_x, npix + border_x - 1, 0, npix - 1, aperture_width,
-                                   aperture_width)
     n_centre = aperture_number ** 2 // 2 + aperture_number // 2 - 1
     n_centre_ref = aperture_number ** 2 // 2 + aperture_number // 2
 
@@ -502,6 +504,12 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     idx = idx.flatten()
 
     phi_int = np.zeros_like(zeros_full)
+    # print('slm_idx {}'.format(slm_idx))
+    # print('n_centre {}'.format(n_centre))
+    # print('slm_idx[0][n_centre]: {}, slm_idx[1][n_centre]: {}, '
+    #       'slm_idx[2][n_centre]: {}, slm_idx[3][n_centre]: {}'.format(slm_idx[0][n_centre], slm_idx[1][n_centre],
+    #                                         slm_idx[2][n_centre], slm_idx[3][n_centre]))
+
     phi_int[slm_idx[0][n_centre]:slm_idx[1][n_centre], slm_idx[2][n_centre]:slm_idx[3][n_centre]] = \
         slm_phase[slm_idx[0][n_centre]:slm_idx[1][n_centre], slm_idx[2][n_centre]:slm_idx[3][n_centre]]
     phi_int[slm_idx[0][n_centre_ref]:slm_idx[1][n_centre_ref], slm_idx[2][n_centre_ref]:slm_idx[3][n_centre_ref]] = \
@@ -519,23 +527,43 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
                                                       filter_size=pms_obj.i_filter_size)
     laser_intensity_upscaled = np.pad(laser_intensity_upscaled, ((0, 0), (border_x, border_x)))
 
-    # Find Camera position with respect to SLM
-    popt_clb, img_cal = find_camera_position(slm_disp_obj, cam_obj, pms_obj, lin_phase, exp_time=exp_time / 20,
-                                             aperture_diameter=npix // 20, roi=[400, 400])
+    # # Find Camera position with respect to SLM
+    # popt_clb, img_cal = find_camera_position(slm_disp_obj, cam_obj, pms_obj, lin_phase, exp_time=exp_time / 20,
+    #                                          aperture_diameter=npix // 20, roi=[400, 400])
+    #
+    # cal_pos_x = popt_clb[0] + cam_obj.res[1] // 2
+    # cal_pos_y = popt_clb[1] + cam_obj.res[0] // 2
+    #
+    # plt.figure()
+    # plt.imshow(img_cal, cmap='turbo')
+    # plt.plot(cal_pos_x, cal_pos_y, 'wx')
+    #
+    # # Determine region of interest on camera
+    # w_cam = int(img_size) // 2 * 2
+    # h_cam = int(img_size) // 2 * 2
+    # offset_x = int((cal_pos_x - w_cam // 2) // 2 * 2)
+    # offset_y = int((cal_pos_y - h_cam // 2) // 2 * 2)
+    # roi_cam = [w_cam, h_cam, offset_x, offset_y]
 
-    cal_pos_x = popt_clb[0] + cam_obj.res[1] // 2
-    cal_pos_y = popt_clb[1] + cam_obj.res[0] // 2
+    cam_roi_pos = [970, 590]  # grat 10
+    cam_roi_sz = [350, 350]  # grat 10
+    cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
+                        int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
 
-    plt.figure()
-    plt.imshow(img_cal, cmap='turbo')
-    plt.plot(cal_pos_x, cal_pos_y, 'wx')
+    cam_obj.take_image()
+    imgzaz = cam_obj.last_frame
 
-    # Determine region of interest on camera
-    w_cam = int(img_size) // 2 * 2
-    h_cam = int(img_size) // 2 * 2
-    offset_x = int((cal_pos_x - w_cam // 2) // 2 * 2)
-    offset_y = int((cal_pos_y - h_cam // 2) // 2 * 2)
-    roi_cam = [w_cam, h_cam, offset_x, offset_y]
+    img_size = imgzaz.shape[0]
+
+    plo_che = True
+    if plo_che:
+        fig = plt.figure()
+        plt.imshow(imgzaz, cmap='inferno', vmax=150)
+        plt.colorbar()
+        plt.title("ROi IMG")
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close(fig)
 
     # Take camera images
     p_max = np.sum(laser_intensity_upscaled[slm_idx[0][n_centre]:slm_idx[1][n_centre],
@@ -547,11 +575,50 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     dt = np.zeros(roi_n ** 2)
     aperture_width_adj = np.zeros(roi_n ** 2)
 
-    n_img = int(2 * n_avg_frames * roi_n ** 2)
-    cam_obj.roi = roi_cam
-    cam_obj.start(n_img)
+    # n_img = int(2 * n_avg_frames * roi_n ** 2)
+    # cam_obj.roi = roi_cam
+    # cam_obj.start(n_img)
+
+    print(Fore.LIGHTGREEN_EX + "record background" + Style.RESET_ALL)
+
+    "close shutter"
+    sh.shutter_state()
+    time.sleep(0.4)
+    if sh.shut_state == 1:
+        sh.shutter_enable()
+    time.sleep(0.4)
+    sh.shutter_state()
+
+    frame_num = n_avg_frames
+    cam_obj.take_average_image(frame_num)
+    cam_obj.bckgr = copy.deepcopy(cam_obj.last_frame)
+    print(cam_obj.bckgr.shape)
+    bckgr = copy.deepcopy(cam_obj.bckgr)
+    # print(bckgr.shape)
+
+    if plo_che:
+        fig = plt.figure()
+        plt.imshow(bckgr, cmap='inferno', vmax=150)
+        plt.colorbar()
+        plt.title('backg')
+        # plt.show()
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close(fig)
+
+    "open shutter"
+    sh.shutter_state()
+    time.sleep(0.1)
+    if sh.shut_state == 0:
+        sh.shutter_enable()
+    time.sleep(0.4)
+    sh.shutter_state()
+
+    'main lOOp'
+    plot_within = False
     aperture_coverage = np.copy(zeros_full)
     for i in range(roi_n ** 2):
+        # i = 64
         t_start = time.time()
         ii = idx[i]
         idx_0, idx_1 = np.unravel_index(ii, phi_load.shape)
@@ -574,18 +641,39 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
         slm_disp_obj.display(np.remainder(masked_phase, 2 * np.pi))
         if i == 0:
-            time.sleep(2 * slm_disp_obj.delay)
+            # time.sleep(2 * slm_disp_obj.delay)
+            time.sleep(2 * 0.1)
 
-        img_avg = hw.get_image_avg(cam_obj, exp_time, n_avg_frames)  # all as usual
+        # img_avg = hw.get_image_avg(cam_obj, exp_time, n_avg_frames)  # all as usual
+        cam_obj.take_average_image(n_avg_frames)
+        # img_avg = cam_obj.last_frame
+        img_avg = cam_obj.last_frame - bckgr
 
         img[:, :, i] = np.copy(img_avg)
         aperture_power[i] = np.mean(img[:, :, i]) * aperture_width ** 2 / aperture_width_adj[i] ** 2
+        print("aperture_power[i]: {}".format(aperture_power[i]))
+
+        if plot_within:
+            fig = plt.figure()
+            plt.subplot(121), plt.imshow(img[..., i], cmap='inferno', vmax=50)
+            plt.colorbar()
+            plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
+            plt.subplot(122), plt.imshow(masked_phase, cmap='inferno')
+            plt.colorbar()
+            plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
+            # plt.show()
+            plt.show(block=False)
+            plt.pause(0.8)
+            plt.close(fig)
+
 
         dt[i] = time.time() - t_start
-        print(dt[i])
-        print(i)
+        # print(dt[i])
+        # print(i)
+        print("time o iter: {}".format(dt[i]))
+        print("iter {} of {}".format(i, roi_n ** 2))
     # cam_obj.stop()
-    cam_obj.roi = roi_mem
+    # cam_obj.roi = roi_mem
     t = np.cumsum(dt)
 
     # Save data
@@ -594,9 +682,20 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     os.mkdir(path)
     np.save(path + '/img', img)
 
-    plt.figure()
+    saVe_plo = True
+
+    figu = plt.figure()
     plt.imshow(aperture_coverage)
     plt.title('Coverage of sub-apertures on the SLM')
+    if saVe_plo:
+        plt.show(block=False)
+        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+        figu.savefig(path +'\\Coverage.png', dpi=300, bbox_inches='tight',
+                    transparent=False)  # True trns worls nice for dispersion thinks I
+        plt.pause(0.8)
+        plt.close()
+    else:
+        plt.show()
 
     # Fit sine to images
     fit_sine = ft.FitSine(fl, pms_obj.k)
@@ -652,21 +751,39 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     dphi_uw_mask = pt.unwrap_2d_mask(dphi, i_fit_mask)
     dphi_uw_mask = np.pad(dphi_uw_mask, pad_roi)
 
-    plt.figure()
+    phFig = plt.figure()
     plt.imshow(dphi_uw / np.pi / 2, cmap='magma')
     plt.colorbar()
     plt.title('Unwrapped measured phase')
+    if saVe_plo:
+        plt.show(block=False)
+        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+        phFig.savefig(path +'\\Unwrapped.png', dpi=300, bbox_inches='tight',
+                    transparent=False)  # True trns worls nice for dispersion thinks I
+        plt.pause(0.8)
+        plt.close()
+    else:
+        plt.show()
 
     fig1, axs1 = plt.subplots(1, 2, sharex=True, sharey=True)
     axs1[0].imshow(img[:, :, -1], cmap='turbo')
     fit_test = np.reshape(fit_sine.fit_sine(x_data, *popt_sv[-1]), (img_size, img_size))
     axs1[1].imshow(fit_test, cmap='turbo')
+    if saVe_plo:
+        plt.show(block=False)
+        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+        fig1.savefig(path +'\\fit.png', dpi=300, bbox_inches='tight',
+                    transparent=False)  # True trns worls nice for dispersion thinks I
+        plt.pause(0.8)
+        plt.close()
+    else:
+        plt.show()
 
     # Save data
     np.save(path + '//dphi', dphi)
     np.save(path + '//dphi_uw', dphi_uw)
-    np.save(path + '//cal_pos_x', cal_pos_x)
-    np.save(path + '//cal_pos_y', cal_pos_y)
+    # np.save(path + '//cal_pos_x', cal_pos_x)
+    # np.save(path + '//cal_pos_y', cal_pos_y)
     np.save(path + '//i_fit', i_fit)
     np.save(path + '//dphi_uw_mask', dphi_uw_mask)
     np.save(path + '//i_fit_mask', i_fit_mask)

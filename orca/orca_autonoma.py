@@ -16,7 +16,6 @@ class Camera():
         self.num = 1
         self.last_frame = np.zeros((2048, 2048))
         self.integration_mode = False
-
         self.bckgr = np.zeros((2048, 2048))
 
     @abc.abstractmethod
@@ -333,6 +332,7 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
         self.integration_mode = False
         self.img_sz_y = int(np.floor(self.cam_y / self.bin_sz))
         self.img_sz_x = int(np.floor(self.cam_x / self.bin_sz))
+        self.pitch = 6.5e-6
 
     def live(self):
         self.hcam.startAcquisition()

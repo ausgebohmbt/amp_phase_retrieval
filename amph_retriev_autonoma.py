@@ -73,19 +73,34 @@ if measure_slm_intensity is True:
     #                                    256, np.asarray(cam_roi_sz[0]))
 
     i_path = clb.measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj,
-                                       15, 64, exp/1000,
+                                       30, 32, exp/1000,
                                        256, np.asarray(cam_roi_sz[0]))
     pms_obj.i_path = i_path
 if measure_slm_phase is True:
     # phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 30, 16, 64, 40000, 256, roi_min_x=2,
     #                                      roi_min_y=2, roi_n=26)
-    phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 15, 32,
-                                         64, 40000, 256, roi_min_x=2,
-                                         roi_min_y=2, roi_n=26)
+    phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 30, 16,
+                                         64, 40000, 256, n_avg_frames=10, roi_min_x=0,
+                                         roi_min_y=0, roi_n=30)
     pms_obj.phi_path = phi_path
 
 
 cam_obj.end()
+
+load_existing = False
+if load_existing:
+    loaded_phuz = np.load(pms_obj.phi_path)
+
+    plt.figure()
+    plt.imshow(loaded_phuz / np.pi / 2, cmap='magma')
+    plt.colorbar()
+    plt.title('Unwrapped measured phase')
+    plt.show()
+    # plt.show(block=False)
+    # plt.pause(0.8)
+    # plt.close(fig)0
+
+
 
 print('es el finAl')
 # 'es el finAl'

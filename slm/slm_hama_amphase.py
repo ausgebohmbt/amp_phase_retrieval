@@ -145,7 +145,7 @@ class SlmDisplay(SLM_clash):
         """upload, the func itself"""
         self.slmffi.Write_FMemArray(bID, ArrayIn, ArraySize, XPixel, YPixel, SlotNo)
         time.sleep(0.1)  # fixme: can this be reduced?
-        print("uploaded")
+        # print("uploaded")
         # self.end()
         # print("loaded phuz")
 
