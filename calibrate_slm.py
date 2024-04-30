@@ -767,8 +767,10 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
     fig1, axs1 = plt.subplots(1, 2, sharex=True, sharey=True)
     axs1[0].imshow(img[:, :, -1], cmap='turbo')
+    axs1[0].colorbar()
     fit_test = np.reshape(fit_sine.fit_sine(x_data, *popt_sv[-1]), (img_size, img_size))
     axs1[1].imshow(fit_test, cmap='turbo')
+    axs1[1].colorbar()
     if saVe_plo:
         plt.show(block=False)
         # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom

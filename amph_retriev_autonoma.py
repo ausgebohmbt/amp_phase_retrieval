@@ -64,7 +64,7 @@ cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
 # plt.show()
 
 measure_slm_intensity = False   # Measure the constant intensity at the SLM (laser beam profile)?
-measure_slm_phase = True       # Measure the constant phase at the SLM?
+measure_slm_phase = False       # Measure the constant phase at the SLM?
 
 "Measuring the constant intensity and phase at the SLM"
 if measure_slm_intensity is True:
@@ -87,19 +87,29 @@ if measure_slm_phase is True:
 
 cam_obj.end()
 
-load_existing = False
+load_existing = True
+saVe_plo = True
+# this_path = pms_obj.phi_path
+this_path = pms_obj.i_path
+
 if load_existing:
-    loaded_phuz = np.load(pms_obj.phi_path)
+    loaded_phuz = np.load(this_path)
 
-    plt.figure()
-    plt.imshow(loaded_phuz / np.pi / 2, cmap='magma')
+    loPhuz = plt.figure()
+    plt.imshow(loaded_phuz, cmap='magma')
+    # plt.imshow(loaded_phuz / np.pi / 2, cmap='magma')
     plt.colorbar()
-    plt.title('Unwrapped measured phase')
-    plt.show()
-    # plt.show(block=False)
-    # plt.pause(0.8)
-    # plt.close(fig)0
-
+    plt.title('intense')
+    # plt.title('Unwrapped measured phase')
+    if saVe_plo:
+        plt.show(block=False)
+        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+        loPhuz.savefig(this_path[:-9] +'\\int.png', dpi=300, bbox_inches='tight',
+                    transparent=False)  # True trns worls nice for dispersion thinks I
+        plt.pause(2.4)
+        plt.close()
+    else:
+        plt.show()
 
 
 print('es el finAl')
