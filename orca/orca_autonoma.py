@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 import orca.hamamatsu_camera as hc
 import abc
 import numpy as np
@@ -71,7 +73,8 @@ class Camera():
         #     return self.last_frame
         #
         # images = np.stack([acqr() for _ in range(num)])
-        return images.mean(axis=0)
+        # return images.mean(axis=0)
+        self.last_frame = images.mean(axis=0)
 
     def show_image(self, lognorm=False) -> None:
         pass
@@ -348,7 +351,9 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
     def take_image(self):
         """the wait function should be properly implemented to get the optimum speed out of
         the multiple frame collection, the INTERNAL_FRAMEINTERVAL function should be useful
-         to be implemented for this""" "DCAM_IDPROP_INTERNAL_FRAMEINTERVAL"
+         to be implemented for this""" "DCAM_IDPROP_INTERNAL_FRAMEINTERVAL""Acq"
+
+        self.hcam.setACQMode('fixed_length', number_frames=1)
         ims = np.zeros((self.img_sz_y, self.img_sz_x))
         self.hcam.startAcquisition()
         time.sleep(self.exposure[0] * self.num + 0.0249 * (self.num + 2))  # frame_interval is 0.0249,
@@ -361,6 +366,11 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
             except Exception as e:
                 print(e)
         self.last_frame = ims.astype(np.float64)
+        # todo clean up
+        # plt.imshow(self.last_frame, cmap='inferno', vmax=140)
+        # plt.colorbar()
+        # plt.title("in cam single")
+        # plt.show()
         self.hcam.stopAcquisition()
 
     def take_average_image(self, num: int):
@@ -378,19 +388,37 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
         """
         print("getting average of {} images, mpesa".format(num))
         self.num = num
-        self.mode = "Acq"
         self.hcam.setACQMode('fixed_length', number_frames=self.num)
-        self.take_image()
-        image_aver = self.last_frame / num
-        self.num = 1
-        return image_aver
+        ims = np.zeros((self.img_sz_y, self.img_sz_x))
+        # plt.imshow(ims, vmax=4)
+        # plt.show()
+        self.hcam.startAcquisition()
+        time.sleep(self.exposure[0] * self.num + 0.0249 * (self.num + 2))  # frame_interval is 0.0249,
+        # added 2 times more because in the limit of 1-2ms exposures frames were lost
+        the_frames = self.get_all_frames()
+        for i in range(self.num):
+            try:
+                img = np.reshape(self.get_grey_values_o_frames(the_frames, i), (self.img_sz_y, self.img_sz_x))
+                ims = np.add(ims,img)
+            except Exception as e:
+                print(e)
+        self.last_frame = ims.astype(np.float64) / num
+        # TODO: CLEAN UP
+        # plt.imshow(self.last_frame, cmap='inferno', vmax=140)
+        # plt.colorbar()
+        # plt.title("in cam")
+        # plt.show()
+        self.hcam.stopAcquisition()
+        # image_aver = self.last_frame / num
 
     def run(self):
         if self.mode == "Live":
+            print("CAM SHOULD NOT GO HERE")
             self._show_preview = True
             self.hcam.setACQMode('run_till_abort',number_frames=None)
             self.live()
         else:
+            print("CAM SHOULD NOT GO HERE")
             self._acquire = True
             self.hcam.setACQMode('fixed_length', number_frames=self.num)
             # print("cam will acquire {} frames".format(self.num))

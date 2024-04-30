@@ -13,7 +13,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from peripheral_instruments.thorlabs_shutter import shutter as sh
 from colorama import Fore, Style  # , Back
 from slm.phase_generator import phagen as phuzGen
-
+import copy
 
 def normalize(im):
     """normalizez 0 2 1"""
@@ -194,6 +194,7 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     # phi_centre[slm_idx[0][i]:slm_idx[1][i], slm_idx[2][i]:slm_idx[3][i]] = slm_phase
     phi_centre = slm_phase
 
+    phuzGen.diviX = 10
     phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
     phuzGen.linear_grating()
     phi_centre = phuzGen.final_phuz
@@ -207,19 +208,13 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     phi_centre = normalize(phi_centre)*200
     slm_disp_obj.display(phi_centre)
 
-
-    # open shutter
+    "open shutter"
     sh.shutter_state()
-
     time.sleep(0.1)
     if sh.shut_state == 0:
         sh.shutter_enable()
     time.sleep(0.4)
-
     sh.shutter_state()
-
-
-
 
     # Take camera image
     # cam_obj.start()
@@ -227,20 +222,25 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     cam_obj.take_image()
     imgzaz = cam_obj.last_frame
 
-    plo_che = True
+    plo_che = False
     if plo_che:
         fig = plt.figure()
         # plt.imshow(imgzaz, cmap='inferno')
-        plt.imshow(imgzaz, cmap='inferno', vmax=60000)
+        plt.imshow(imgzaz, cmap='inferno', vmax=65500)
         plt.colorbar()
         plt.title("full IMG")
-        plt.show()
+        # plt.show()
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close(fig)
 
 
     # cam_roi_pos = [650, 850]
     # cam_roi_sz = [400, 400]
-    cam_roi_pos = [780, 400]
-    cam_roi_sz = [160, 160]
+    # cam_roi_pos = [780, 400]  # grat O5
+    # cam_roi_sz = [160, 160]  # grat O5
+    cam_roi_pos = [970, 590]  # grat 10
+    cam_roi_sz = [350, 350]  # grat 10
     cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
                         int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
 
@@ -249,12 +249,12 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
     if plo_che:
         fig = plt.figure()
-        plt.imshow(imgzaz, cmap='inferno', vmax=50000)
+        plt.imshow(imgzaz, cmap='inferno', vmax=65500)
         plt.colorbar()
         plt.title("ROi IMG")
-        plt.show()
-
-
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close(fig)
 
     # measure_slm_intensity.img_exp_check = cam_obj.get_image(exp_time)
     # measure_slm_intensity.img_exp_check = cam_obj.take_image()
@@ -297,38 +297,40 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     # cam_obj.num = aperture_number
     # cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
 
-
-
-
     print(Fore.LIGHTGREEN_EX + "record background" + Style.RESET_ALL)
-    # close shutter
-    sh.shutter_state()
 
+    "close shutter"
+    sh.shutter_state()
     time.sleep(0.4)
     if sh.shut_state == 1:
         sh.shutter_enable()
     time.sleep(0.4)
-
     sh.shutter_state()
 
-
-    frame_num = 1
+    frame_num = 4
     cam_obj.take_average_image(frame_num)
-    cam_obj.bckgr = cam_obj.last_frame
+    cam_obj.bckgr = copy.deepcopy(cam_obj.last_frame)
     print(cam_obj.bckgr.shape)
-    bckgr = cam_obj.bckgr
-    print(bckgr.shape)
+    bckgr = copy.deepcopy(cam_obj.bckgr)
+    # print(bckgr.shape)
 
     if plo_che:
         fig = plt.figure()
-        plt.imshow(cam_obj.bckgr, cmap='inferno')
+        plt.imshow(bckgr, cmap='inferno', vmax=150)
         plt.colorbar()
         plt.title('backg')
-        plt.show()
+        # plt.show()
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close(fig)
 
-    # open shutter
-    sh.shutter_enable()
+    "open shutter"
+    sh.shutter_state()
+    time.sleep(0.1)
+    if sh.shut_state == 0:
+        sh.shutter_enable()
     time.sleep(0.4)
+    sh.shutter_state()
 
     # img = np.zeros((ny, nx, aperture_number ** 2))
     img = np.zeros((bckgr.shape[0], bckgr.shape[1], aperture_number ** 2))
@@ -336,20 +338,22 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     aperture_power = np.zeros(aperture_number ** 2)
     # slm_phase = normalize(slm_phase)*200phi_centre
     slm_phase = phi_centre[:aperture_width, :aperture_width]
+    plot_within = False
+    # here = [108, 109, 110]
+    # here = [434, 435, 436]
+    # for i in here:  # range(aperture_number ** 2):
     for i in range(aperture_number ** 2):
         # i = (aperture_number ** 2) // 2 - aperture_number // 2
-        # i=i-7
+        # i=i-7+
         print("iter {} of {}".format(i, aperture_number ** 2))
         masked_phase = np.copy(zeros_full)
         bckgr = np.copy(bckgr)
-        print(bckgr.shape)
         masked_phase[slm_idx[0][i]:slm_idx[1][i], slm_idx[2][i]:slm_idx[3][i]] = slm_phase
 
         slm_disp_obj.display(masked_phase)
         # slm_disp_obj.display(phi_centre)
 
-        # img[..., i] = cam_obj.get_image(int(exp_time))
-
+        # cam_obj.take_image()
         cam_obj.take_average_image(frame_num)
         # img[..., i] = cam_obj.last_frame
         img[..., i] = cam_obj.last_frame - bckgr
@@ -357,18 +361,18 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         aperture_power[i] = np.sum(img[..., i]) / (np.size(img[..., i]) * exp_time)
         print(aperture_power[i])
 
-        # fig = plt.figure()
-        # plt.subplot(121), plt.imshow(img[..., i], cmap='inferno', vmax=150)
-        # plt.colorbar()
-        # plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
-        # plt.subplot(122), plt.imshow(masked_phase, cmap='inferno')
-        # plt.colorbar()
-        # plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
-        # plt.show()
-
-        # plt.show(block=False)
-        # time.sleep(2)
-        # plt.close(fig)
+        if plot_within:
+            fig = plt.figure()
+            plt.subplot(121), plt.imshow(img[..., i], cmap='inferno', vmax=150)
+            plt.colorbar()
+            plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
+            plt.subplot(122), plt.imshow(masked_phase, cmap='inferno')
+            plt.colorbar()
+            plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
+            # plt.show()
+            plt.show(block=False)
+            plt.pause(0.8)
+            plt.close(fig)
 
 
     # cam_obj.stop()
@@ -379,6 +383,8 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
     # Find SLM intensity profile
     i_rec = np.reshape(aperture_power, (aperture_number, aperture_number))
+    # Save data
+    np.save(path + '//i_rec', i_rec)
 
     fig = plt.figure()
     plt.imshow(i_rec, cmap='inferno')
@@ -416,13 +422,15 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     axs[1].set_ylabel("y [mm]", fontname='Cambria')
     cbar = plt.colorbar(im, cax=ax_cb)
     cbar.set_label('normalised intensity', fontname='Cambria')
+    plt.show()
 
     plt.figure()
     plt.imshow(img[..., (aperture_number ** 2 - aperture_number) // 2], cmap='turbo')
     plt.title('Camera image of central sub-aperture')
+    plt.show()
 
     # Save data
-    np.save(path + '//i_rec', i_rec)
+    # np.save(path + '//i_rec', i_rec)
     np.save(path + '//i_fit_slm', i_fit_slm)
     np.save(path + '//popt_slm', popt_slm)
     return path + '//i_rec'

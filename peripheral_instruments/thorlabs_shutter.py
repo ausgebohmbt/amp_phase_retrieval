@@ -1,3 +1,5 @@
+import time
+
 import pyvisa as visa
 # from PyQt5 import QtCore
 from colorama import Fore, Style  # , Back
@@ -33,6 +35,8 @@ class Shutter():
         """check shutter state 0 is off 1 is on"""
         # warning says read is not available but it does not work without it
         self.my_instrument.query('ens?')
+        time.sleep(0.4)
+        # print(Fore.LIGHTGREEN_EX + "shutState psotQUERY" + Style.RESET_ALL)
         self.shut_state = int(self.my_instrument.read())  # value is returned as str
         print(self.coloz[self.shut_state] + "shutter is found {}".format(self.string_state[self.shut_state])
               + Style.RESET_ALL)
@@ -44,6 +48,7 @@ class Shutter():
         self.shutter_state()
         print(self.coloz[self.shut_state] + "shutter is {}".format(self.string_state[self.shut_state])
               + Style.RESET_ALL)
+        # print(Fore.BLUE + "shutEnable end" + Style.RESET_ALL)
         # self.end()
 
     def run(self):

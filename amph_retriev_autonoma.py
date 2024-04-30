@@ -63,8 +63,8 @@ cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
 # plt.colorbar()
 # plt.show()
 
-measure_slm_intensity = True   # Measure the constant intensity at the SLM (laser beam profile)?
-measure_slm_phase = False       # Measure the constant phase at the SLM?
+measure_slm_intensity = False   # Measure the constant intensity at the SLM (laser beam profile)?
+measure_slm_phase = True       # Measure the constant phase at the SLM?
 
 "Measuring the constant intensity and phase at the SLM"
 if measure_slm_intensity is True:
@@ -73,13 +73,19 @@ if measure_slm_intensity is True:
     #                                    256, np.asarray(cam_roi_sz[0]))
 
     i_path = clb.measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj,
-                                       3, 320, exp/1000,
+                                       15, 64, exp/1000,
                                        256, np.asarray(cam_roi_sz[0]))
     pms_obj.i_path = i_path
 if measure_slm_phase is True:
-    phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 30, 16, 64, 40000, 256, roi_min_x=2,
+    # phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 30, 16, 64, 40000, 256, roi_min_x=2,
+    #                                      roi_min_y=2, roi_n=26)
+    phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 15, 32,
+                                         64, 40000, 256, roi_min_x=2,
                                          roi_min_y=2, roi_n=26)
     pms_obj.phi_path = phi_path
+
+
+cam_obj.end()
 
 print('es el finAl')
 # 'es el finAl'
