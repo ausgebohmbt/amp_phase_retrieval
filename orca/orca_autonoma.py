@@ -49,6 +49,14 @@ class Camera():
         """
 
     @abc.abstractmethod
+    def prep_acq(self):
+        pass
+
+    @abc.abstractmethod
+    def stop_acq(self):
+        pass
+
+    @abc.abstractmethod
     def take_average_image(self, num: int):
         """Capture and return an average image from a number of captures.
 
@@ -348,14 +356,24 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
             except Exception as e:
                 pass
 
+    def prep_acq(self):
+        if self.num == 1:
+            self.hcam.setACQMode('fixed_length', number_frames=1)
+        else:
+            self.hcam.setACQMode('fixed_length', number_frames=self.num)
+        self.hcam.startAcquisition()
+
+    def stop_acq(self):
+        self.hcam.stopAcquisition()
+
     def take_image(self):
         """the wait function should be properly implemented to get the optimum speed out of
         the multiple frame collection, the INTERNAL_FRAMEINTERVAL function should be useful
          to be implemented for this""" "DCAM_IDPROP_INTERNAL_FRAMEINTERVAL""Acq"
 
-        self.hcam.setACQMode('fixed_length', number_frames=1)
+        # self.hcam.setACQMode('fixed_length', number_frames=1)
         ims = np.zeros((self.img_sz_y, self.img_sz_x))
-        self.hcam.startAcquisition()
+        # self.hcam.startAcquisition()
         time.sleep(self.exposure[0] * self.num + 0.0249 * (self.num + 2))  # frame_interval is 0.0249,
         # added 2 times more because in the limit of 1-2ms exposures frames were lost
         the_frames = self.get_all_frames()
@@ -371,7 +389,7 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
         # plt.colorbar()
         # plt.title("in cam single")
         # plt.show()
-        self.hcam.stopAcquisition()
+        # self.hcam.stopAcquisition()
 
     def take_average_image(self, num: int):
         """Capture and return an average image from a number of captures.
@@ -388,11 +406,12 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
         """
         print("getting average of {} images, mpesa".format(num))
         self.num = num
-        self.hcam.setACQMode('fixed_length', number_frames=self.num)
+        self.prep_acq()
+        # self.hcam.setACQMode('fixed_length', number_frames=self.num)
         ims = np.zeros((self.img_sz_y, self.img_sz_x))
         # plt.imshow(ims, vmax=4)
         # plt.show()
-        self.hcam.startAcquisition()
+        # self.hcam.startAcquisition()
         time.sleep(self.exposure[0] * self.num + 0.0249 * (self.num + 2))  # frame_interval is 0.0249,
         # added 2 times more because in the limit of 1-2ms exposures frames were lost
         the_frames = self.get_all_frames()
@@ -408,7 +427,7 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
         # plt.colorbar()
         # plt.title("in cam")
         # plt.show()
-        self.hcam.stopAcquisition()
+        # self.hcam.stopAcquisition()
         # image_aver = self.last_frame / num
 
     def run(self):
