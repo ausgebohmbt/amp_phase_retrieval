@@ -508,7 +508,12 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
     :return: Path to measured constant phase at the SLM.
     """
-    
+
+    # prep data Save
+    date_saved = time.strftime('%y-%m-%d_%H-%M-%S', time.localtime())
+    path = pms_obj.data_path + date_saved + '_measure_slm_wavefront'
+    os.mkdir(path)
+
     # roi_mem = cam_obj.roi
     res_y, res_x = slm_disp_obj.res
     npix = np.min(slm_disp_obj.res)
@@ -517,16 +522,32 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     #
     fl = pms_obj.fl
     #
-    # lin_phase = np.array([-spot_pos, -spot_pos])
-    # slm_phase = pt.init_phase(zeros_full, slm_disp_obj, pms_obj, lin_phase=lin_phase)
+    lin_phase = np.array([-spot_pos, -spot_pos])
+    slm_phase4me = pt.init_phase(np.zeros((1024, 1272)), slm_disp_obj,
+                         pms_obj, lin_phase=lin_phase)
+    slm_phaseOUT = pt.init_phase(np.zeros((aperture_width, aperture_width)), slm_disp_obj,
+                         pms_obj, lin_phase=lin_phase)
+
+    # slm_phase = pt.init_phase(np.zeros((aperture_width, aperture_width)), slm_disp_obj, pms_obj, lin_phase=lin_phase)
+    slm_phase = np.remainder(slm_phaseOUT, 2 * np.pi)
+    slm_phase4me = np.remainder(slm_phase4me, 2 * np.pi)
+    slm_phase4me = np.fliplr(slm_phase4me)
+    # slm_phase = np.remainder(slm_phase, 2 * np.pi)
+    slm_phase = slm_phase4me
+    # slm_phase = np.flipud(np.fliplr(slm_phase))
     #
     if benchmark is True:
         phi_load = np.load(phi_load_path)
     else:
         phi_load = np.zeros((aperture_number, aperture_number))
-    phuzGen.diviX = 20
+
+    slm_phaseNOR = normalize(slm_phase)
+    phuzGen.diviX = 10
+    phuzGen.diviY = 10
     phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
-    phuzGen.linear_grating()
+    # phuzGen.linear_grating()
+    phuzGen.grat = slm_phaseNOR
+    phuzGen._make_full_slm_array()
     phi_centre = phuzGen.final_phuz
 
     # # figph = plt.figure()
@@ -593,12 +614,11 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     # offset_y = int((cal_pos_y - h_cam // 2) // 2 * 2)
     # roi_cam = [w_cam, h_cam, offset_x, offset_y]
 
-    # cam_roi_pos = [970, 590]  # grat 10
-    # cam_roi_sz = [350, 350]  # grat 10
-    cam_roi_pos = [1170, 804]  # grat 20
-    cam_roi_sz = [220, 220]  # grat 20
-    cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
-                        int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
+    "roi"
+    # cam_roi_pos = [1080, 1230]  # grat 10
+    # cam_roi_sz = [300, 300]  # grat 10 [1230: 1530, 1080: 1380]
+    # cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
+    #                     int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
 
     cam_obj.prep_acq()
     cam_obj.take_image()
@@ -606,22 +626,30 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
     img_size = imgzaz.shape[0]
 
-    plo_che = True
+    plo_che = False
     if plo_che:
         fig = plt.figure()
-        plt.imshow(imgzaz, cmap='inferno', vmax=150)
+        # plt.imshow(imgzaz, cmap='inferno', vmax=150)
+        plt.subplot(121)
+        plt.imshow(imgzaz, cmap='inferno', vmax=60000)  # grat 10
+        plt.colorbar()
+        plt.title("full IMG")
+        plt.subplot(122)
+        plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)  # grat 10
         plt.colorbar()
         plt.title("ROi IMG")
-        plt.show(block=False)
-        plt.pause(1)
-        plt.close(fig)
+        plt.show()
+        # plt.show(block=False)
+        # plt.pause(1)
+        # plt.close(fig)
 
     # Take camera images
     p_max = np.sum(laser_intensity_upscaled[slm_idx[0][n_centre]:slm_idx[1][n_centre],
                    slm_idx[2][n_centre]:slm_idx[3][n_centre]])
 
     norm = np.zeros(roi_n ** 2)
-    img = np.zeros((img_size, img_size, roi_n ** 2))
+    img = np.zeros((300, 300, roi_n ** 2))
+    # img = np.zeros((img_size, img_size, roi_n ** 2))
     aperture_power = np.zeros(roi_n ** 2)
     dt = np.zeros(roi_n ** 2)
     aperture_width_adj = np.zeros(roi_n ** 2)
@@ -650,7 +678,8 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
     if plo_che:
         fig = plt.figure()
-        plt.imshow(bckgr, cmap='inferno', vmax=150)
+        # plt.imshow(bckgr, cmap='inferno', vmax=150)
+        plt.imshow(bckgr[1230:1530, 1080:1380], cmap='inferno', vmax=150)
         plt.colorbar()
         plt.title('backg')
         # plt.show()
@@ -667,10 +696,10 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     sh.shutter_state()
 
     'main lOOp'
-    plot_within = False
+    plot_within = True
     aperture_coverage = np.copy(zeros_full)
     for i in range(roi_n ** 2):
-        # i = 64
+        # i = 564
         t_start = time.time()
         ii = idx[i]
         idx_0, idx_1 = np.unravel_index(ii, phi_load.shape)
@@ -701,23 +730,47 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         # img_avg = cam_obj.last_frame
         img_avg = cam_obj.last_frame - bckgr
 
-        img[:, :, i] = np.copy(img_avg)
+        # imgF = cam_obj.last_frame - bckgr
+        imgF = img_avg[1230:1530, 1080:1380]
+        img[:, :, i] = np.copy(imgF)
+        # img[:, :, i] = np.copy(img_avg)
         aperture_power[i] = np.mean(img[:, :, i]) * aperture_width ** 2 / aperture_width_adj[i] ** 2
         print("aperture_power[i]: {}".format(aperture_power[i]))
 
+        # if plot_within:
+        #     fig = plt.figure()
+        #     plt.subplot(121), plt.imshow(img[..., i], cmap='inferno', vmax=50)
+        #     plt.colorbar()
+        #     plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
+        #     plt.subplot(122), plt.imshow(masked_phase, cmap='inferno')
+        #     plt.colorbar()
+        #     plt.title('phase iter: {}'.format(i))
+        #     # plt.show()
+        #     plt.show(block=False)
+        #     plt.pause(0.5)
+        #     plt.close(fig)
         if plot_within:
             fig = plt.figure()
-            plt.subplot(121), plt.imshow(img[..., i], cmap='inferno', vmax=50)
+            plt.subplot(221), plt.imshow(img_avg, cmap='inferno', vmin=0, vmax=100)
             plt.colorbar()
             plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
-            plt.subplot(122), plt.imshow(masked_phase, cmap='inferno')
+            plt.subplot(222), plt.imshow(masked_phase, cmap='inferno')
             plt.colorbar()
-            plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
+            plt.title('iter: {}'.format(i))
+            plt.subplot(223), plt.imshow(img[..., i], cmap='inferno', vmin=0, vmax=20)
+            plt.colorbar()
+            plt.title('ROI')
+            plt.subplot(224), plt.imshow(bckgr[1230:1530, 1080:1380], cmap='inferno', vmax=150)
+            plt.colorbar()
+            plt.title('bg')
             # plt.show()
-            plt.show(block=False)
-            plt.pause(0.8)
+            # plt.show(block=False)
+            fig.savefig(path + '\\iter_{}'.format(i) + '_phuz.png', dpi=300, bbox_inches='tight',
+                        transparent=False)  # True trns worls nice for dispersion thinks I
+            # Save data
+            # np.save(path + '\\imgF_iter_{}'.format(i), imgF)
+            # plt.pause(0.6)
             plt.close(fig)
-
 
         dt[i] = time.time() - t_start
         # print(dt[i])
@@ -729,9 +782,9 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     t = np.cumsum(dt)
 
     # Save data
-    date_saved = time.strftime('%y-%m-%d_%H-%M-%S', time.localtime())
-    path = pms_obj.data_path + date_saved + '_measure_slm_wavefront'
-    os.mkdir(path)
+    # date_saved = time.strftime('%y-%m-%d_%H-%M-%S', time.localtime())
+    # path = pms_obj.data_path + date_saved + '_measure_slm_wavefront'
+    # os.mkdir(path)
     np.save(path + '/img', img)
 
     saVe_plo = True

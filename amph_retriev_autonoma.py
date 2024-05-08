@@ -24,7 +24,7 @@ from slm.phase_generator import phagen as phuzGen
 from peripheral_instruments.thorlabs_shutter import shutter as sh
 from colorama import Fore, Style  # , Back
 
-exp = 200
+exp = 310
 params = {'exposure': exp/1000, "initCam": True,
           "came_numb": 0, "trig_mODe": 1}
 # phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
@@ -63,8 +63,8 @@ cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
 # plt.colorbar()
 # plt.show()
 
-measure_slm_intensity = True   # Measure the constant intensity at the SLM (laser beam profile)?
-measure_slm_phase = False       # Measure the constant phase at the SLM?
+measure_slm_intensity = False   # Measure the constant intensity at the SLM (laser beam profile)?
+measure_slm_phase = True       # Measure the constant phase at the SLM?
 
 "Measuring the constant intensity and phase at the SLM"
 if measure_slm_intensity is True:
@@ -80,7 +80,7 @@ if measure_slm_phase is True:
     # phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 30, 16, 64, 40000, 256, roi_min_x=2,
     #                                      roi_min_y=2, roi_n=26)
     phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 30, 16,
-                                         64, 40000, 256, n_avg_frames=5, roi_min_x=0,
+                                         64, 40000, 256, n_avg_frames=10, roi_min_x=0,
                                          roi_min_y=0, roi_n=30)
     pms_obj.phi_path = phi_path
 
