@@ -10,7 +10,7 @@ import error_metrics as m, patterns as pt, fitting as ft
 import scipy.optimize as opt
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from peripheral_instruments.thorlabs_shutter import shutter as sh
+# from peripheral_instruments.thorlabs_shutter import shutter as sh
 from colorama import Fore, Style  # , Back
 from slm.phase_generator import phagen as phuzGen
 import copy
@@ -21,6 +21,67 @@ def normalize(im):
     mini = np.min(im)
     norm = ((im - mini) / (maxi - mini))
     return norm
+
+
+# Utility functions for array manipulation
+def make_grid(im, scale=None):
+    """
+    Return a xy meshgrid based in an input array, im, ranging from -scal * im.shape[0] // 2 to scal * im.shape[0] // 2.
+
+    :param im: Input array.
+    :param scale: Optional scaling factor.
+    :return: x and y meshgrid arrays.
+    """
+    if scale is None:
+        scale = 1
+    h, w = im.shape
+    y_lim, x_lim = h // 2, w // 2
+
+    x, y = np.linspace(-x_lim * scale, x_lim * scale, w), np.linspace(-y_lim * scale, y_lim * scale, h)
+    x, y = np.meshgrid(x, y)
+    return x, y
+
+
+def init_pha(img, slm_disp_large_dim, slm_disp_pitch, pms_obj, lin_phase=None, quad_phase=None, lin_method=None):
+    """
+    SLM phase guess to initialise phase-retrieval algorithm (see https://doi.org/10.1364/OE.16.002176).
+
+    :param ndarray img: 2D array with size of desired output.
+    :param slm_disp_obj: Instance of Params class
+    :param ndarray lin_phase: Vector of length 2, containing parameters for the linear phase term
+    :param ndarray quad_phase: Vector of length 2, containing parameters for the quadratic phase term
+    :param str lin_method: Determines how the linear phase term is parameterised. The options are:
+
+        -'pixel'
+            Defines the linear phase in terms of Fourier pixels [px].
+        -'angles'
+            Defines the linear phase in terms of angles [rad].
+
+    :return: Phase pattern of shape ``img.shape``
+    """
+    if lin_phase is None:
+        lin_phase = np.zeros(2)
+    if lin_method is None:
+        lin_method = 'pixel'
+    if quad_phase is None:
+        quad_phase = np.zeros(2)
+
+    x, y = make_grid(img)
+
+    if lin_method == 'pixel':
+        pix_x, pix_y = lin_phase
+        mx = np.pi * pix_x / slm_disp_large_dim
+        my = np.pi * pix_y / slm_disp_large_dim
+        print('pixel methOD')
+    if lin_method == 'angles':
+        alpha_x, alpha_y = lin_phase
+        mx = np.tan(alpha_x) * pms_obj.k * slm_disp_pitch
+        my = np.tan(alpha_y) * pms_obj.k * slm_disp_pitch
+
+    r, gamma = quad_phase
+    kl = mx * x + my * y
+    kq = 4 * r * (gamma * y ** 2 + (1 - gamma) * x ** 2)
+    return kl + kq
 
 
 def find_camera_position(slm_disp_obj, cam_obj, pms_obj, lin_phase, exp_time=100, aperture_diameter=25, roi=[500, 500]):
@@ -168,30 +229,30 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     :param roi_width: Width of the region of interest on the camera [camera pixels].
     :return:
     """
-    roi_mem = cam_obj.roi_is
+    # roi_mem = cam_obj.roi_is
     date_saved = time.strftime('%y-%m-%d_%H-%M-%S', time.localtime())
     path = pms_obj.data_path + date_saved + '_' + 'measure_slm_intensity'
-    os.mkdir(path)
+    # os.mkdir(path)
 
-    res_y, res_x = slm_disp_obj.res
+    res_y, res_x = 1024, 1272
     border_x = int(np.abs(res_x - res_y) // 2)
-    npix = np.min(slm_disp_obj.res)
+    npix = 1024
 
     zeros = np.zeros((npix, npix))
-    zeros_full = np.zeros((npix, np.max(slm_disp_obj.res)))
+    zeros_full = np.zeros((npix, np.max(1272)))
 
     lin_phase = np.array([-spot_pos, -spot_pos])
-    slm_phase4me = pt.init_phase(np.zeros((1024, 1272)), slm_disp_obj,
+    slm_phase4me = init_pha(np.zeros((1024, 1024)), 1272, 12.5e-6,
                          pms_obj, lin_phase=lin_phase)
-    slm_phaseOUT = pt.init_phase(np.zeros((aperture_width, aperture_width)), slm_disp_obj,
+    slm_phaseOUT = init_pha(np.zeros((aperture_width, aperture_width)), 1272, 12.5e-6,
                          pms_obj, lin_phase=lin_phase)
 
     # slm_phase = pt.init_phase(np.zeros((aperture_width, aperture_width)), slm_disp_obj, pms_obj, lin_phase=lin_phase)
     slm_phase = np.remainder(slm_phaseOUT, 2 * np.pi)
     slm_phase4me = np.remainder(slm_phase4me, 2 * np.pi)
     slm_phase4me = np.fliplr(slm_phase4me)
-    # slm_phase = np.remainder(slm_phase, 2 * np.pi)
-    slm_phase = slm_phase4me
+
+    # slm_phase = slm_phase
     # slm_phase = np.flipud(np.fliplr(slm_phase))
     slm_idx = get_aperture_indices(aperture_number, aperture_number, border_x, npix + border_x, 0, npix, aperture_width,
                                    aperture_width)
@@ -199,21 +260,15 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     # Display central sub-aperture on SLM and check if camera is over-exposed.
     i = (aperture_number ** 2) // 2 - aperture_number // 2
     phi_centre = np.zeros_like(zeros)
-    # phi_centre[slm_idx[0][i]:slm_idx[1][i], slm_idx[2][i]:slm_idx[3][i]] = slm_phase
-    phi_centre = slm_phase
-    slm_phaseNOR = normalize(slm_phase)
-    # plt.imshow(slm_phaseNOR, cmap='inferno')
-    # plt.colorbar()
-    # plt.title("slm_phaseNOR")
-    # plt.show()
+    phi_centre[slm_idx[0][i]:slm_idx[1][i], slm_idx[2][i]:slm_idx[3][i]] = slm_phase
+    # phi_centre = slm_phase
+
 
     phuzGen.diviX = 10
     phuzGen.diviY = 10
     phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
-    # phuzGen.linear_grating()
-    phuzGen.grat = slm_phaseNOR
-    phuzGen._make_full_slm_array()
-    phi_centre = phuzGen.final_phuz
+    phuzGen.linear_grating()
+    phi_centreMA = phuzGen.final_phuz
 
     # figph = plt.figure()
     # plt.imshow(phi_centre, cmap='inferno')
@@ -221,73 +276,38 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     # plt.title("phi_centre")
     # plt.show()
 
-    phi_centre = normalize(phi_centre)*220
-    slm_disp_obj.display(phi_centre)
+    slm_phaseNOR = normalize(slm_phase)*220
+    phi_centreMA = normalize(phi_centreMA)*220
+    phi_centreMA = phi_centreMA[:aperture_width, :aperture_width]
 
-    "open shutter"
-    sh.shutter_state()
-    time.sleep(0.1)
-    if sh.shut_state == 0:
-        sh.shutter_enable()
-    time.sleep(0.4)
-    sh.shutter_state()
-
-    # Take camera image
-    cam_obj.prep_acq()
-    cam_obj.take_image()
-    imgzaz = cam_obj.last_frame
-
-    plo_che = False
+    plo_che = True
     if plo_che:
         fig = plt.figure()
-        # plt.imshow(imgzaz, cmap='inferno')
-        plt.imshow(imgzaz, cmap='inferno', vmax=5000)
+        plt.subplot(221), plt.imshow(slm_phase4me, cmap='inferno')
         plt.colorbar()
-        plt.title("full IMG")
-        # plt.show()
-        plt.show(block=False)
-        plt.pause(1)
-        plt.close(fig)
-
-    "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"""
-
-
-    # cam_roi_pos = [650, 850]
-    # cam_roi_sz = [400, 400]
-    # cam_roi_pos = [780, 400]  # grat O5
-    # cam_roi_sz = [160, 160]  # grat O5
-    # cam_roi_pos = [970, 590]  # grat 10
-    # cam_roi_sz = [350, 350]  # grat 10
-    # cam_roi_pos = [1380, 1120]  # grat 20
-    # cam_roi_sz = [90, 90]  # grat 20
-    # cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
-    #                     int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
-
-    cam_obj.stop_acq()
-    cam_obj.prep_acq()
-    cam_obj.take_image()
-    imgzaz = cam_obj.last_frame
-
-    plo_che = False
-    if plo_che:
-        fig = plt.figure()
-        # plt.imshow(imgzaz[1120:1210, 1380:1470], cmap='inferno', vmax=65000)  # grat 20
-        plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=65000)  # grat 10
+        plt.title('slm_phase4me, theirs normalized')
+        plt.subplot(222), plt.imshow(slm_phase, cmap='inferno')
         plt.colorbar()
-        plt.title("ROi IMG")
-        # plt.show()
-        plt.show(block=False)
-        plt.pause(1)
-        plt.close(fig)
+        plt.title('slm_phase')
+        plt.subplot(223), plt.imshow(phi_centre, cmap='inferno')
+        plt.colorbar()
+        plt.title('phi_centre')
+        plt.subplot(224), plt.imshow(phi_centreMA, cmap='inferno')
+        plt.colorbar()
+        plt.title('phi_centreMAap')
+        plt.show()
+        # plt.show(block=False)
+        # fig.savefig(path + '\\iter_{}'.format(i) + '_full.png', dpi=300, bbox_inches='tight',
+        #             transparent=False)  # True trns worls nice for dispersion thinks I
+        # plt.pause(0.8)
+        # plt.close(fig)
+
+
+
 
     # measure_slm_intensity.img_exp_check = cam_obj.get_image(exp_time)
     # measure_slm_intensity.img_exp_check = cam_obj.take_image()
-    #
-    #
-    #
-    #
-    #
+
     # # Find Camera position with respect to SLM
     # popt_clb, img_cal = find_camera_position(slm_disp_obj, cam_obj, pms_obj, lin_phase, exp_time=exp_time / 10,
     #                                          aperture_diameter=npix // 20, roi=[400, 400])
@@ -324,100 +344,56 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
     print(Fore.LIGHTGREEN_EX + "record background" + Style.RESET_ALL)
 
-    "close shutter"
-    sh.shutter_state()
-    time.sleep(0.4)
-    if sh.shut_state == 1:
-        sh.shutter_enable()
-    time.sleep(0.4)
-    sh.shutter_state()
-
-    frame_num = 1
-    cam_obj.stop_acq()
-    # cam_obj.prep_acq()
-
-    cam_obj.take_average_image(frame_num)
-    cam_obj.bckgr = copy.deepcopy(cam_obj.last_frame)
-    print(cam_obj.bckgr.shape)
-    bckgr = copy.deepcopy(cam_obj.bckgr)
-    # print(bckgr.shape)
-
-    if plo_che:
-        fig = plt.figure()
-        plt.imshow(bckgr[1230:1530, 1080:1380], cmap='inferno', vmax=150)
-        plt.colorbar()
-        plt.title('backg')
-        # plt.show()
-        plt.show(block=False)
-        plt.pause(1)
-        plt.close(fig)
-
-    "open shutter"
-    sh.shutter_state()
-    time.sleep(0.1)
-    if sh.shut_state == 0:
-        sh.shutter_enable()
-    time.sleep(0.4)
-    sh.shutter_state()
 
     # img = np.zeros((ny, nx, aperture_number ** 2))
 
-    img = np.zeros((300, 300, aperture_number ** 2))
+    img = np.zeros((90, 90, aperture_number ** 2))
     # img = np.zeros((bckgr.shape[0], bckgr.shape[1], aperture_number ** 2))
 
     # img = np.zeros((roi[1], roi[0], aperture_number ** 2))
     aperture_power = np.zeros(aperture_number ** 2)
     # slm_phase = normalize(slm_phase)*200phi_centre
     slm_phase = phi_centre[:aperture_width, :aperture_width]
-    plot_within = False
+    plot_within = True
     # here = [108, 109, 110]
     # here = [434, 435, 436]
     dt = np.zeros(aperture_number ** 2)
 
     # for i in here:  # range(aperture_number ** 2):
-    bckgr = np.copy(bckgr)
     for i in range(aperture_number ** 2):
         # i = (aperture_number ** 2) // 2 - aperture_number // 2
-        # i = 210
+        # i = i-3
         print("iter {} of {}".format(i, aperture_number ** 2))
         t_start = time.time()
         # masked_phase = np.copy(zeros_full)
         masked_phase = np.zeros((npix, np.max(slm_disp_obj.res)))
         masked_phase[slm_idx[0][i]:slm_idx[1][i], slm_idx[2][i]:slm_idx[3][i]] = slm_phase
 
-        slm_disp_obj.display(masked_phase)
-        # slm_disp_obj.display(phi_centre)
-
-        # cam_obj.take_image()
-        cam_obj.take_average_image(frame_num)
         # img[..., i] = cam_obj.last_frame
         # plt.imshow(imgzaz[1120:1210, 1380:1470], cmap='inferno', vmax=65000)
-        imgF = cam_obj.last_frame - bckgr
-        img[..., i] = imgF[1230:1530, 1080:1380]
 
         aperture_power[i] = np.sum(img[..., i]) / (np.size(img[..., i]) * exp_time)
         print(aperture_power[i])
 
         if plot_within:
             fig = plt.figure()
-            plt.subplot(221), plt.imshow(imgF[:, :], cmap='inferno', vmin=0, vmax=100)
+            plt.subplot(221), plt.imshow(masked_phase, cmap='inferno', vmax=150)
             plt.colorbar()
             plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
             plt.subplot(222), plt.imshow(masked_phase, cmap='inferno')
             plt.colorbar()
             plt.title('iter: {}'.format(i))
-            plt.subplot(223), plt.imshow(img[..., i], cmap='inferno', vmax=450)
+            plt.subplot(223), plt.imshow(img[..., i], cmap='inferno', vmax=150)
             plt.colorbar()
             plt.title('ROI')
-            plt.subplot(224), plt.imshow(bckgr[1230:1530, 1080:1380], cmap='inferno', vmax=150)
+            plt.subplot(224), plt.imshow(masked_phase[1120:1210, 1380:1470], cmap='inferno', vmax=150)
             plt.colorbar()
             plt.title('bg')
-            plt.show()
-            # plt.show(block=False)
-            # fig.savefig(path + '\\iter_{}'.format(i) + '_full.png', dpi=300, bbox_inches='tight',
-            #             transparent=False)  # True trns worls nice for dispersion thinks I
-            # Save data
-            # np.save(path + '\\imgF_iter_{}'.format(i), imgF)
+            # plt.show()
+            plt.show(block=False)
+            # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+            fig.savefig(path + '\\iter_{}'.format(i) + '_full.png', dpi=300, bbox_inches='tight',
+                        transparent=False)  # True trns worls nice for dispersion thinks I
             plt.pause(0.8)
             plt.close(fig)
 

@@ -14,6 +14,7 @@ the propagation of light.
 import numpy as np
 import matplotlib.pyplot as plt
 import calibrate_slm as clb
+import measurement_functions as mfunc
 
 from experiment import Params#, Camera, SlmDisp
 
@@ -24,7 +25,7 @@ from slm.phase_generator import phagen as phuzGen
 from peripheral_instruments.thorlabs_shutter import shutter as sh
 from colorama import Fore, Style  # , Back
 
-exp = 200
+exp = 250
 params = {'exposure': exp/1000, "initCam": True,
           "came_numb": 0, "trig_mODe": 1}
 # phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
@@ -72,7 +73,11 @@ if measure_slm_intensity is True:
     #                                    30, 32, 10000,
     #                                    256, np.asarray(cam_roi_sz[0]))
 
-    i_path = clb.measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj,
+    # i_path = clb.measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj,
+    #                                    30, 32, exp/1000,
+    #                                    256, np.asarray(cam_roi_sz[0]))
+
+    i_path = mfunc.measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj,
                                        30, 32, exp/1000,
                                        256, np.asarray(cam_roi_sz[0]))
     pms_obj.i_path = i_path

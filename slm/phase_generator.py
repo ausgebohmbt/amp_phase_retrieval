@@ -33,7 +33,7 @@ class PhaseGen:
         self.state_lens = False
         self.state_phase = False
         self.state_amp = False
-        self.state_corr = True
+        self.state_corr = False
         self.whichphuzzez = {"grating": self.state_grat, "lens": self.state_lens,
                              "phase": self.state_phase, "amplitude": self.state_amp, "corr_patt": self.state_corr}
         self.final_phuz = self.canVas
@@ -183,16 +183,16 @@ class PhaseGen:
         # fixme: rm redundancy
         sz_y = self.slmY
         sz_x = self.slmX
-        div = self.diviX
+        div_x = self.diviX
         if sz_x >= sz_y:
             sz = sz_x
         elif sz_y > sz_x:
             sz = sz_y
         else:
             sz = sz_x
-        if div != 0:
+        if div_x != 0:
             x = np.linspace(0, sz, sz)
-            x = np.mod(np.floor(x), div) / div
+            x = np.mod(np.floor(x), div_x) / div_x
             # repeat elements K times
             res = []
             for i in x:
@@ -201,7 +201,7 @@ class PhaseGen:
             grr = np.tile(res, (len(res), 1))
         else:
             grr = np.zeros((sz_y, sz_x))
-        if div < 0:
+        if div_x < 0:
             print("grating divisions number is negative, only positive values are supported\r\n")
         # grat = grr[:self.spin_array_sz[0], :self.spin_array_sz[1]]
 
@@ -219,15 +219,16 @@ class PhaseGen:
         # plt.title("grating full")
         # plt.show()
 
+        div_y = self.diviY
         if sz_x >= sz_y:
             sz = sz_x
         elif sz_y > sz_x:
             sz = sz_y
         else:
             sz = sz_x
-        if div != 0:
+        if div_y != 0:
             x = np.linspace(0, sz, sz)
-            x = np.mod(np.floor(x), div)/div
+            x = np.mod(np.floor(x), div_y)/div_y
             # repeat elements K times
             res = []
             for i in x:
@@ -237,13 +238,14 @@ class PhaseGen:
             # grr = np.tile(res, (1, len(res)))
             grr = np.tile(res, (len(res), 1))
             # grr = np.tile(x, (sz, 1))
-        elif div == 0:
+        elif div_y == 0:
             grr = np.zeros((sz, sz))
         # trans it and crop et
         grr_y = grr.T
         agrr_y = grr_y[:sz_y*width, :sz_x*width]
 
         grat = agrr_y[:self.slmY, :self.slmX] + agrr_x[:self.slmY, :self.slmX]
+        grat = np.fliplr(grat)
 
         self.grat = grat
 
@@ -277,6 +279,13 @@ class PhaseGen:
         # combined = np.add(np.add(gra, le), np.add(phu, am))
         # mOD = unimOD(combined)
         # pha_ce = center_overlay(self.slmX, self.slmY, mOD)
+        # plt.subplot(121), plt.imshow(crxn_pat, cmap='inferno')
+        # plt.colorbar()
+        # plt.title("crxn_pat")
+        # plt.subplot(122), plt.imshow(gra, cmap='inferno')
+        # plt.colorbar()
+        # plt.title("gra")
+        # plt.show()
         combo = np.add(crxn_pat, gra)
         phuz = unimOD(combo) * self.modDepth
         self.final_phuz = phuz.astype('uint8')
