@@ -485,24 +485,46 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     :return: Path to measured constant phase at the SLM.
     """
     
+    # prep data Save
+    date_saved = time.strftime('%y-%m-%d_%H-%M-%S', time.localtime())
+    path = pms_obj.data_path + date_saved + '_measure_slm_wavefront'
+    os.mkdir(path)
+
     # roi_mem = cam_obj.roi
-    res_y, res_x = slm_disp_obj.res
-    npix = np.min(slm_disp_obj.res)
+    res_y, res_x = 1024, 1272
+    npix = np.min(1024)
     border_x = int(np.abs(res_x - res_y) // 2)
-    zeros_full = np.zeros((npix, np.max(slm_disp_obj.res)))
+    zeros_full = np.zeros((npix, 1272))
     #
     fl = pms_obj.fl
     #
-    # lin_phase = np.array([-spot_pos, -spot_pos])
-    # slm_phase = pt.init_phase(zeros_full, slm_disp_obj, pms_obj, lin_phase=lin_phase)
+    lin_phase = np.array([-spot_pos, -spot_pos])
+
+    slm_phase4me = init_pha(np.zeros((1024, 1272)), 1272, 12.5e-6,
+                         pms_obj, lin_phase=lin_phase)
+    slm_phaseOUT = init_pha(np.zeros((aperture_width, aperture_width)), 1272, 12.5e-6,
+                         pms_obj, lin_phase=lin_phase)
+
+    # slm_phase = pt.init_phase(np.zeros((aperture_width, aperture_width)), slm_disp_obj, pms_obj, lin_phase=lin_phase)
+    slm_phase = np.remainder(slm_phaseOUT, 2 * np.pi)
+    slm_phase4me = np.remainder(slm_phase4me, 2 * np.pi)
+    slm_phase4me = np.fliplr(slm_phase4me)
+    # slm_phase = np.remainder(slm_phase, 2 * np.pi)
+    slm_phase = slm_phase4me
+    # slm_phase = np.flipud(np.fliplr(slm_phase))
     #
     if benchmark is True:
         phi_load = np.load(phi_load_path)
     else:
         phi_load = np.zeros((aperture_number, aperture_number))
-    phuzGen.diviX = 20
+
+    slm_phaseNOR = normalize(slm_phase)
+    phuzGen.diviX = 10
+    phuzGen.diviY = 10
     phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
-    phuzGen.linear_grating()
+    # phuzGen.linear_grating()
+    phuzGen.grat = slm_phaseNOR
+    phuzGen._make_full_slm_array()
     phi_centre = phuzGen.final_phuz
 
     # # figph = plt.figure()
@@ -512,7 +534,7 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     # plt.show()
 
     phi_centre = normalize(phi_centre)*220
-    slm_disp_obj.display(phi_centre)
+    # slm_disp_obj.display(phi_centre)
     # slm_phase = phi_centre[:aperture_width, :aperture_width]
     slm_phase = phi_centre
 
@@ -539,7 +561,10 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     phi_int[slm_idx[0][n_centre_ref]:slm_idx[1][n_centre_ref], slm_idx[2][n_centre_ref]:slm_idx[3][n_centre_ref]] = \
         slm_phase[slm_idx[0][n_centre_ref]:slm_idx[1][n_centre_ref], slm_idx[2][n_centre_ref]:slm_idx[3][n_centre_ref]]
 
-    slm_disp_obj.display(phi_int)
+    plt.imshow(phi_int, cmap='inferno')  # grat 10
+    plt.colorbar()
+    plt.title("n_centre {}, n_centre_ref {}".format(n_centre, n_centre_ref))
+    plt.show()
 
     # # cam_obj.start()
     # measure_slm_wavefront.img_exposure_check = cam_obj.get_image(exp_time)

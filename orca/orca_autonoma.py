@@ -357,9 +357,12 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
                 pass
 
     def prep_acq(self):
+        print("into prepin")
         if self.num == 1:
+            print("prepin to a {} frames".format(self.num))
             self.hcam.setACQMode('fixed_length', number_frames=1)
         else:
+            print("prepin to get av of  {} frames".format(self.num))
             self.hcam.setACQMode('fixed_length', number_frames=self.num)
         self.hcam.startAcquisition()
 
@@ -418,10 +421,10 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
         for i in range(self.num):
             try:
                 img = np.reshape(self.get_grey_values_o_frames(the_frames, i), (self.img_sz_y, self.img_sz_x))
-                ims = np.add(ims,img)
+                ims = np.add(ims, img)
             except Exception as e:
                 print(e)
-        self.last_frame = ims.astype(np.float64) / num
+        self.last_frame = ims.astype(np.float64) / self.num
         # TODO: CLEAN UP
         # plt.imshow(self.last_frame, cmap='inferno', vmax=140)
         # plt.colorbar()
