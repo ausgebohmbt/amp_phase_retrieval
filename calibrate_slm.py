@@ -596,7 +596,7 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     img = np.zeros((300, 300, roi_n ** 2))
     # img = np.zeros((img_size, img_size, roi_n ** 2))
     aperture_power = np.zeros(roi_n ** 2)
-    dt = np.zeros(roi_n ** 2)
+    dt = []
     aperture_width_adj = np.zeros(roi_n ** 2)
 
     # n_img = int(2 * n_avg_frames * roi_n ** 2)
@@ -721,12 +721,12 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
             # plt.pause(0.7)
             plt.close(fig)
 
-        dt[i] = time.time() - t_start
+        dt.append(time.time() - t_start)
         # print(dt[i])
         # print(i)
         print("time o iter: {}".format(dt[i]))
         print("iter {} of {}".format(i, iter_num))
-        print("estimated time left approx: {}'".format((numpy.mean(dt)*(iter_num-i)) // 60))
+        print("estimated time left approx: {}'".format((numpy.mean(dt)*(iter_num-i)) / 60))
 
     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     "~~~ lOOp enD ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -813,6 +813,35 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     dphi_uw_mask = pt.unwrap_2d_mask(dphi, i_fit_mask)
     dphi_uw_mask = np.pad(dphi_uw_mask, pad_roi)
 
+    # Save data
+    np.save(path + '//dphi', dphi)
+    np.save(path + '//dphi_uw', dphi_uw)
+    np.save(path + '//dphi_err', dphi_err)
+    # np.save(path + '//cal_pos_x', cal_pos_x)
+    # np.save(path + '//cal_pos_y', cal_pos_y)
+    np.save(path + '//i_fit', i_fit)
+    np.save(path + '//dphi_uw_mask', dphi_uw_mask)
+    np.save(path + '//i_fit_mask', i_fit_mask)
+    np.save(path + '//t', t)
+    np.save(path + '//popt_sv', popt_sv)
+    np.save(path + '//perr_sv', perr_sv)
+
+
+    phErr = plt.figure()
+    plt.imshow(dphi_err, cmap='magma')
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.title('dphi_err measured phase')
+    if saVe_plo:
+        plt.show(block=False)
+        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+        phErr.savefig(path +'\\dphi_err.png', dpi=300, bbox_inches='tight',
+                    transparent=False)  # True trns worls nice for dispersion thinks I
+        plt.pause(0.8)
+        plt.close(phErr)
+    else:
+        plt.show()
+
+
     phFig = plt.figure()
     plt.imshow(dphi_uw / np.pi / 2, cmap='magma')
     plt.colorbar(fraction=0.046, pad=0.04)
@@ -823,10 +852,11 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         phFig.savefig(path +'\\Unwrapped.png', dpi=300, bbox_inches='tight',
                     transparent=False)  # True trns worls nice for dispersion thinks I
         plt.pause(0.8)
-        plt.close()
+        plt.close(phFig)
     else:
         plt.show()
 
+    img_size = 300
     fit_test = np.reshape(fit_sine.fit_sine(x_data, *popt_sv[-1]), (img_size, img_size))
 
     fig1 = plt.Figure()
@@ -842,19 +872,19 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         fig1.savefig(path +'\\fit.png', dpi=300, bbox_inches='tight',
                     transparent=False)  # True trns worls nice for dispersion thinks I
         plt.pause(0.8)
-        plt.close()
+        plt.close(fig1)
     else:
         plt.show()
 
-    # Save data
-    np.save(path + '//dphi', dphi)
-    np.save(path + '//dphi_uw', dphi_uw)
-    # np.save(path + '//cal_pos_x', cal_pos_x)
-    # np.save(path + '//cal_pos_y', cal_pos_y)
-    np.save(path + '//i_fit', i_fit)
-    np.save(path + '//dphi_uw_mask', dphi_uw_mask)
-    np.save(path + '//i_fit_mask', i_fit_mask)
-    np.save(path + '//t', t)
-    np.save(path + '//popt_sv', popt_sv)
-    np.save(path + '//perr_sv', perr_sv)
+    # # Save data
+    # np.save(path + '//dphi', dphi)
+    # np.save(path + '//dphi_uw', dphi_uw)
+    # # np.save(path + '//cal_pos_x', cal_pos_x)
+    # # np.save(path + '//cal_pos_y', cal_pos_y)
+    # np.save(path + '//i_fit', i_fit)
+    # np.save(path + '//dphi_uw_mask', dphi_uw_mask)
+    # np.save(path + '//i_fit_mask', i_fit_mask)
+    # np.save(path + '//t', t)
+    # np.save(path + '//popt_sv', popt_sv)
+    # np.save(path + '//perr_sv', perr_sv)
     return path + '//dphi_uw'

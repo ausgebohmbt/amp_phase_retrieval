@@ -28,7 +28,7 @@ cam_roi_sz = [300, 300]
 
 
 measure_slm_intensity = False   # Measure the constant intensity at the SLM (laser beam profile)?
-measure_slm_phase = True       # Measure the constant phase at the SLM?
+measure_slm_phase = False       # Measure the constant phase at the SLM?
 
 "Measuring the constant intensity and phase at the SLM"
 if measure_slm_intensity is True:
@@ -88,6 +88,16 @@ if load_existing:
         plt.close()
     else:
         plt.show()
+
+
+    loaded_phuz = np.load(this_path)
+
+    loPhuz = plt.figure()
+    plt.imshow(loaded_phuz, cmap='turbo')
+    # plt.imshow(loaded_phuz / np.pi / 2, cmap='magma')
+    plt.colorbar()
+    plt.title('intense')
+
 
 print('es el finAl')
 # 'es el finAl'
