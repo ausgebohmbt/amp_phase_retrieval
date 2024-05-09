@@ -357,12 +357,12 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
                 pass
 
     def prep_acq(self):
-        print("into prepin")
+        # print("into prepin")
         if self.num == 1:
-            print("prepin to a {} frames".format(self.num))
+            # print("prepin to a {} frames".format(self.num))
             self.hcam.setACQMode('fixed_length', number_frames=1)
         else:
-            print("prepin to get av of  {} frames".format(self.num))
+            # print("prepin to get av of  {} frames".format(self.num))
             self.hcam.setACQMode('fixed_length', number_frames=self.num)
         self.hcam.startAcquisition()
 
