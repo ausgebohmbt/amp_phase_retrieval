@@ -37,7 +37,7 @@ class PhaseGen:
         self.whichphuzzez = {"grating": self.state_grat, "lens": self.state_lens,
                              "phase": self.state_phase, "amplitude": self.state_amp, "corr_patt": self.state_corr}
         self.final_phuz = self.canVas
-        self.modDepth = 200
+        self.modDepth = 220
         self.xprmental_prmtrs = {"spin_conf": True, "amp_conf": True,
                                  "side_fill": False}
         self.spin_array_sz = (800, 800)
