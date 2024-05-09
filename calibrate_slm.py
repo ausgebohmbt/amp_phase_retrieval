@@ -4,6 +4,8 @@ Module to measure the constant amplitude and phase at the SLM.
 
 import os
 import time
+
+import numpy
 import numpy as np
 import hardware as hw
 import error_metrics as m, patterns as pt, fitting as ft
@@ -644,7 +646,8 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     'main lOOp'
     plot_within = True
     aperture_coverage = np.copy(zeros_full)
-    for i in range(roi_n ** 2):
+    iter_num = roi_n ** 2
+    for i in range(iter_num):
         # i = 465
         t_start = time.time()
         ii = idx[i]
@@ -722,7 +725,8 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         # print(dt[i])
         # print(i)
         print("time o iter: {}".format(dt[i]))
-        print("iter {} of {}".format(i, roi_n ** 2))
+        print("iter {} of {}".format(i, iter_num))
+        print("estimated time left approx: {}'".format((numpy.mean(dt)*(iter_num-i)) // 60))
 
     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     "~~~ lOOp enD ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"

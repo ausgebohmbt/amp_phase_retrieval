@@ -407,7 +407,7 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
         np.ndarray
             The averaged image as a NumPy array.
         """
-        print("getting average of {} images, mpesa".format(num))
+        # print("getting average of {} images, mpesa".format(num))
         self.num = num
         self.prep_acq()
         # self.hcam.setACQMode('fixed_length', number_frames=self.num)
