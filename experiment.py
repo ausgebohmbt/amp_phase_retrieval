@@ -25,7 +25,7 @@ import hardware as hw  # todo: practically useless
 
 
 class Params(hw.ParamsBase):
-    wavelength = 762e-9           # Wavelength [m]      # wavelength = 670e-9
+    wavelength = 752e-9           # Wavelength [m]      # wavelength = 670e-9
     beam_diameter = 1272*12.5e-6  # Diameter of incident beam [m]      # beam_diameter = 7.25e-3
     fl = 0.3                      # Focal length [m]    # fl = 0.25
 
@@ -36,7 +36,7 @@ class Params(hw.ParamsBase):
     # todo: these the saved ones or...??
     phi_path = data_path + '24-05-01_16-06-50_measure_slm_wavefront/dphi_uw.npy'
     # phi_path = data_path + '24-04-30_14-54-25_measure_slm_wavefront/dphi_uw.npy'
-    i_path = data_path + '24-05-10_16-03-31_measure_slm_intensity/i_rec.npy'
+    i_path = data_path + '24-05-10_22-04-36_measure_slm_intensity/i_rec.npy'
 
     phi_filter_size = 2  # todo: what is it?
     crop = 64  # todo: what is it?

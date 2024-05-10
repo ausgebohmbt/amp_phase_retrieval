@@ -400,11 +400,17 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     # Save data
     np.save(path + '//i_rec', i_rec)
 
-    fig = plt.figure()
+    figIint = plt.figure()
     plt.imshow(i_rec, cmap='inferno')
     plt.colorbar()
     plt.title("i_rec")
-    plt.show()
+    # plt.show()
+    plt.show(block=False)
+    figIint.savefig(path + '\\intenseFull.png', dpi=300, bbox_inches='tight', transparent=False)
+    # Save data
+    # np.save(path + '\\imgF_iter_{}'.format(i), imgF)
+    plt.pause(0.8)
+    plt.close(figIint)
 
     # Fit Gaussian to measured intensity
     extent_slm = (slm_disp_obj.slm_size[0] + aperture_width * slm_disp_obj.pitch) / 2
@@ -444,10 +450,16 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     plt.pause(1.8)
     plt.close(fig)
 
-    plt.figure()
+    figSub = plt.figure()
     plt.imshow(img[..., (aperture_number ** 2 - aperture_number) // 2], cmap='turbo')
     plt.title('Camera image of central sub-aperture')
-    plt.show()
+    # plt.show()
+    plt.show(block=False)
+    figSub.savefig(path + '\\central_sub.png', dpi=300, bbox_inches='tight', transparent=False)
+    # Save data
+    # np.save(path + '\\imgF_iter_{}'.format(i), imgF)
+    plt.pause(1.8)
+    plt.close(figSub)
 
     # Save data
     # np.save(path + '//i_rec', i_rec)
@@ -739,7 +751,8 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
             plt.title('iter: {}, pad is {}'.format(i, pad))
             plt.subplot(133), plt.imshow(img[..., i], cmap='inferno', vmin=0, vmax=200)
             plt.colorbar(fraction=0.046, pad=0.04)
-            plt.title('ROI ape_pow: {}, pxl_pow: {}'.format(aperture_power[i], aperture_powah[i]))
+            plt.title('ROI ape_pow: {}, pxl_pow: {}'.format(np.round(aperture_power[i],2),
+                                                            np.round(aperture_powah[i], 2)))
             # plt.show()
             # plt.show(block=False)
             fig.savefig(path + '\\iter_{}'.format(i) + '_phuz.png', dpi=300, bbox_inches='tight',
