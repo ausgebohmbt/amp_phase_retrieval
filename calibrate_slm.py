@@ -223,10 +223,10 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     slm_disp_obj.display(phi_centre)
 
     # figph = plt.figure()
-    # plt.imshow(phi_centre, cmap='inferno')
-    # plt.colorbar()
-    # plt.title("phi_centre")
-    # plt.show()
+    plt.imshow(phi_centre, cmap='inferno')
+    plt.colorbar()
+    plt.title("phi_centre")
+    plt.show()
 
 
     "open shutter"
@@ -275,6 +275,8 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     p_opt, p_err = ft.fit_gaussian(imgzaz)
     calib_pos_x = int(p_opt[0] + cam_roi_sz[0] // 2)
     calib_pos_y = int(p_opt[1] + cam_roi_sz[1] // 2)
+    print(Fore.LIGHTRED_EX + "ROi IMG, gaussian center x0 {}, "
+                             "y0 {}".format(calib_pos_x, calib_pos_y) + Style.RESET_ALL)
 
     plo_che = True
     if plo_che:
@@ -334,10 +336,11 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     # slm_phase = normalize(slm_phase)*200phi_centre
     slm_phase = phi_centre[:aperture_width, :aperture_width]
     plot_within = False
-    dt = np.zeros(aperture_number ** 2)
+    dt = []
 
     bckgr = np.copy(bckgr)
-    for i in range(aperture_number ** 2):
+    iter_num = aperture_number ** 2
+    for i in range(iter_num):
         # i = (aperture_number ** 2) // 2 - aperture_number // 2
         # i = 210
         print("iter {} of {}".format(i, aperture_number ** 2))
@@ -362,7 +365,7 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
         if plot_within:
             fig = plt.figure()
-            plt.subplot(221), plt.imshow(img[..., i][146:148, 152:154], cmap='inferno', vmin=0, vmax=100)
+            plt.subplot(221), plt.imshow(img[..., i][142:144, 152:154], cmap='inferno', vmin=0, vmax=100)
             plt.colorbar()
             plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
             plt.subplot(222), plt.imshow(masked_phase, cmap='inferno')
@@ -371,11 +374,12 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
             plt.subplot(223), plt.imshow(img[..., i], cmap='inferno', vmax=450)
             plt.colorbar()
             plt.title('ROI')
-            plt.subplot(224), plt.imshow(bckgr[1230:1530, 1080:1380], cmap='inferno', vmax=150)
+            plt.subplot(224), plt.imshow(bckgr, cmap='inferno', vmax=150)
+            # plt.subplot(224), plt.imshow(bckgr[1230:1530, 1080:1380], cmap='inferno', vmax=150)
             plt.colorbar()
             plt.title('bg')
-            plt.show()
-            # plt.show(block=False)
+            # plt.show()
+            plt.show(block=False)
             # fig.savefig(path + '\\iter_{}'.format(i) + '_full.png', dpi=300, bbox_inches='tight',
             #             transparent=False)  # True trns worls nice for dispersion thinks I
             # Save data
@@ -383,10 +387,10 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
             plt.pause(0.8)
             plt.close(fig)
 
-        dt[i] = time.time() - t_start
-        print("time of iter: {}".format(dt[i]))
-    # cam_obj.stop()
-    # cam_obj.roi = roi_mem
+        dt.append(time.time() - t_start)
+        print("time o iter: {}".format(dt[i]))
+        print("iter {} of {}".format(i, iter_num))
+        print("estimated time left approx: {}'".format((numpy.mean(dt)*(iter_num-i)) / 60))
 
     np.save(path + '//img', img)
     np.save(path + '//aperture_power', aperture_power)
@@ -432,7 +436,13 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     axs[1].set_ylabel("y [mm]", fontname='Cambria')
     cbar = plt.colorbar(im, cax=ax_cb)
     cbar.set_label('normalised intensity', fontname='Cambria')
-    plt.show()
+    # plt.show()
+    plt.show(block=False)
+    fig.savefig(path + '\\intense.png', dpi=300, bbox_inches='tight', transparent=False)
+    # Save data
+    # np.save(path + '\\imgF_iter_{}'.format(i), imgF)
+    plt.pause(1.8)
+    plt.close(fig)
 
     plt.figure()
     plt.imshow(img[..., (aperture_number ** 2 - aperture_number) // 2], cmap='turbo')
@@ -714,9 +724,9 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         img[:, :, i] = cam_obj.last_frame - bckgr
         # img[:, :, i] = np.copy(img_avg)
         # aperture_power[i] = np.mean(img[:, :, i]) * aperture_width ** 2 / aperture_width_adj[i] ** 2
-        aperture_power[i] = np.mean(img[..., i][146:148, 152:154]) * 3 ** 2 / 3 ** 2
+        aperture_power[i] = np.mean(img[..., i][142:144, 152:154]) * 3 ** 2 / 3 ** 2
         print("aperture_power[i]: {}".format(aperture_power[i]))
-        aperture_powah[i] = img[..., i][147, 153]
+        aperture_powah[i] = img[..., i][143, 153]
         print("pxl_power[i]: {}".format(aperture_powah[i]))
 
         if plot_within:
@@ -837,6 +847,8 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     np.save(path + '//dphi_err', dphi_err)
     # np.save(path + '//cal_pos_x', cal_pos_x)
     # np.save(path + '//cal_pos_y', cal_pos_y)
+    np.save(path + '//dx', dx)
+    np.save(path + '//dy', dy)
     np.save(path + '//i_fit', i_fit)
     np.save(path + '//dphi_uw_mask', dphi_uw_mask)
     np.save(path + '//i_fit_mask', i_fit_mask)
@@ -887,7 +899,7 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     if saVe_plo:
         plt.show(block=False)
         # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
-        fig1.savefig(path +'\\fit.png', dpi=300, bbox_inches='tight',
+        fig1.savefig(path + '\\fit.png', dpi=300, bbox_inches='tight',
                     transparent=False)  # True trns worls nice for dispersion thinks I
         plt.pause(2)
         plt.close(fig1)
@@ -897,7 +909,7 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     power = np.reshape(aperture_power, (roi_n, roi_n))
     powah = np.reshape(aperture_powah, (roi_n, roi_n))
     np.save(path + '//powah', powah)
-    np.save(path + '//powah', power)
+    np.save(path + '//power', power)
     np.save(path + '//imgzz', img)
 
     figPow = plt.Figure()

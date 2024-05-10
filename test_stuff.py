@@ -15,6 +15,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 # import calibrate_slm as clb
 import measurement_functions as mfunc
+import error_metrics as m, patterns as pt, fitting as ft
 
 from experiment import Params#, Camera, SlmDisp
 
@@ -25,7 +26,8 @@ slm_disp_obj = None
 cam_obj = None
 exp = 100
 cam_roi_sz = [300, 300]
-
+fl = pms_obj.fl
+fit_sine = ft.FitSine(fl, pms_obj.k)
 
 measure_slm_intensity = False   # Measure the constant intensity at the SLM (laser beam profile)?
 measure_slm_phase = False       # Measure the constant phase at the SLM?
@@ -47,12 +49,12 @@ if measure_slm_phase is True:
     # pms_obj.phi_path = phi_path
 
 
-load_existing = True
+load_existing = False
 saVe_plo = False
 # this_path = pms_obj.phi_path
 # this_path = pms_obj.i_path
-this_path = "E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\amphase_result\\24-05-10_12-15-14_measure_slm_wavefront\\powah.npy"
-this_path = "E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\amphase_result\\24-05-10_12-15-14_measure_slm_wavefront\\power.npy"
+this_path = "E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\amphase_result\\24-05-10_10-55-51_measure_slm_intensity\\i_rec.npy"
+# this_path = "E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\amphase_result\\24-05-10_12-15-14_measure_slm_wavefront\\power.npy"
 
 if load_existing:
     loaded_phuz = np.load(this_path)
@@ -65,22 +67,6 @@ if load_existing:
     # plt.title('Unwrapped measured phase')
     plt.show()
 
-    # fig, axs = plt.subplots(1, 2)
-    # im = axs[0].imshow(i_rec / np.max(i_rec), cmap='turbo', extent=extent)
-    # axs[0].set_title('Intensity at SLM Aperture', fontname='Cambria')
-    # axs[0].set_xlabel("x [mm]", fontname='Cambria')
-    # axs[0].set_ylabel("y [mm]", fontname='Cambria')
-    #
-    # divider = make_axes_locatable(axs[1])
-    # ax_cb = divider.new_horizontal(size="5%", pad=0.05)
-    # fig.add_axes(ax_cb)
-    # im = axs[1].imshow(i_fit_slm / np.max(i_fit_slm), cmap='turbo', extent=extent)
-    # axs[1].set_title('Fitted Gaussian', fontname='Cambria')
-    # axs[1].set_xlabel("x [mm]", fontname='Cambria')
-    # axs[1].set_ylabel("y [mm]", fontname='Cambria')
-    # cbar = plt.colorbar(im, cax=ax_cb)
-    # cbar.set_label('normalised intensity', fontname='Cambria')
-
     if saVe_plo:
         plt.show(block=False)
         # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
@@ -91,14 +77,63 @@ if load_existing:
     else:
         plt.show()
 
+"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+main_path = "E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\amphase_result\\24-05-10_17-30-45_measure_slm_wavefront\\"
 
-    # loaded_phuz = np.load(this_path)
-    #
-    # loPhuz = plt.figure()
-    # plt.imshow(loaded_phuz, cmap='turbo')
-    # # plt.imshow(loaded_phuz / np.pi / 2, cmap='magma')
-    # plt.colorbar()
-    # plt.title('intense')
+img = np.load(main_path + "img.npy")
+popt_sv = np.load(main_path + "popt_sv.npy")
+powah = np.load(main_path + "powah.npy")
+power = np.load(main_path + "powah.npy")
+i_fit = np.load(main_path + "i_fit.npy")
+
+plt.imshow(img[:, :, -1], cmap='turbo')
+plt.colorbar(fraction=0.046, pad=0.04)
+plt.title("img[:, :, -1]")
+plt.show()
+
+x, y = pt.make_grid(img[:, :, 0], scale=12.5e-6)
+x_data = np.vstack((x.ravel(), y.ravel()))
+img_size = img.shape[0]
+# fit_test = np.reshape(fit_sine.fit_sine(x_data, *popt_sv[-1]), (img_size, img_size))
+
+fig1 = plt.Figure()
+plt.subplot(121)
+plt.imshow(img[:, :, -1], cmap='turbo')
+plt.colorbar(fraction=0.046, pad=0.04)
+plt.title("img[:, :, -1]")
+plt.subplot(122)
+plt.imshow(i_fit, cmap='turbo')
+plt.colorbar(fraction=0.046, pad=0.04)
+plt.title("i_fit")
+if saVe_plo:
+    plt.show(block=False)
+    # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+    fig1.savefig(main_path + '\\fit.png', dpi=300, bbox_inches='tight', transparent=False)
+    plt.pause(2)
+    plt.close(fig1)
+else:
+    plt.show()
+
+"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+
+figPow = plt.Figure()
+plt.subplot(121)
+plt.imshow(powah, cmap='turbo')
+plt.title("powah")
+plt.colorbar(fraction=0.046, pad=0.04)
+plt.subplot(122)
+plt.imshow(power, cmap='turbo')
+plt.title("powah")
+plt.colorbar(fraction=0.046, pad=0.04)
+if saVe_plo:
+    plt.show(block=False)
+    # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+    figPow.savefig(main_path +'\\powaher.png', dpi=300, bbox_inches='tight', transparent=False)
+    plt.pause(2)
+    plt.close(figPow)
+else:
+    plt.show()
 
 
 print('es el finAl')
