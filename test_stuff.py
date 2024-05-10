@@ -47,10 +47,12 @@ if measure_slm_phase is True:
     # pms_obj.phi_path = phi_path
 
 
-load_existing = False
+load_existing = True
 saVe_plo = False
 # this_path = pms_obj.phi_path
-this_path = pms_obj.i_path
+# this_path = pms_obj.i_path
+this_path = "E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\amphase_result\\24-05-10_12-15-14_measure_slm_wavefront\\powah.npy"
+this_path = "E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\amphase_result\\24-05-10_12-15-14_measure_slm_wavefront\\power.npy"
 
 if load_existing:
     loaded_phuz = np.load(this_path)
@@ -58,9 +60,10 @@ if load_existing:
     loPhuz = plt.figure()
     plt.imshow(loaded_phuz, cmap='turbo')
     # plt.imshow(loaded_phuz / np.pi / 2, cmap='magma')
-    plt.colorbar()
-    plt.title('intense')
+    plt.colorbar(fraction=0.046, pad=0.04)
+    # plt.title('intense')
     # plt.title('Unwrapped measured phase')
+    plt.show()
 
     # fig, axs = plt.subplots(1, 2)
     # im = axs[0].imshow(i_rec / np.max(i_rec), cmap='turbo', extent=extent)
@@ -77,7 +80,6 @@ if load_existing:
     # axs[1].set_ylabel("y [mm]", fontname='Cambria')
     # cbar = plt.colorbar(im, cax=ax_cb)
     # cbar.set_label('normalised intensity', fontname='Cambria')
-    # plt.show()
 
     if saVe_plo:
         plt.show(block=False)
@@ -90,13 +92,13 @@ if load_existing:
         plt.show()
 
 
-    loaded_phuz = np.load(this_path)
-
-    loPhuz = plt.figure()
-    plt.imshow(loaded_phuz, cmap='turbo')
-    # plt.imshow(loaded_phuz / np.pi / 2, cmap='magma')
-    plt.colorbar()
-    plt.title('intense')
+    # loaded_phuz = np.load(this_path)
+    #
+    # loPhuz = plt.figure()
+    # plt.imshow(loaded_phuz, cmap='turbo')
+    # # plt.imshow(loaded_phuz / np.pi / 2, cmap='magma')
+    # plt.colorbar()
+    # plt.title('intense')
 
 
 print('es el finAl')

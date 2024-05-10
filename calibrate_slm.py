@@ -258,22 +258,31 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     " set roi or else "
     " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
-    # cam_roi_pos = [970, 590]  # grat 10
-    # cam_roi_sz = [350, 350]  # grat 10
-    # cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
-    #                     int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
+    cam_roi_pos = [1080, 1230]  # grat 10 [1230:1530, 1080:1380]
+    cam_roi_sz = [300, 300]  # grat 10
+    cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
+                        int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
 
     cam_obj.stop_acq()
+    cam_obj.exposure = 0.1/1000
     cam_obj.prep_acq()
     cam_obj.take_image()
     imgzaz = cam_obj.last_frame
+    cam_obj.exposure = exp_time
 
-    plo_che = False
+
+    # Fit Gaussian to camera image
+    p_opt, p_err = ft.fit_gaussian(imgzaz)
+    calib_pos_x = int(p_opt[0] + cam_roi_sz[0] // 2)
+    calib_pos_y = int(p_opt[1] + cam_roi_sz[1] // 2)
+
+    plo_che = True
     if plo_che:
         fig = plt.figure()
-        plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=65000)  # grat 10
+        plt.imshow(imgzaz, cmap='inferno', vmax=65000)  # grat 10
+        # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=65000)  # grat 10
         plt.colorbar()
-        plt.title("ROi IMG")
+        plt.title("ROi IMG, gaussian center x0 {}, y0 {}".format(calib_pos_x, calib_pos_y))
         # plt.show()
         plt.show(block=False)
         plt.pause(1)
@@ -299,7 +308,8 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
     if plo_che:
         fig = plt.figure()
-        plt.imshow(bckgr[1230:1530, 1080:1380], cmap='inferno', vmax=150)
+        plt.imshow(bckgr, cmap='inferno', vmax=150)
+        # plt.imshow(bckgr[1230:1530, 1080:1380], cmap='inferno', vmax=150)
         plt.colorbar()
         plt.title('backg')
         # plt.show()
@@ -343,15 +353,16 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         cam_obj.take_average_image(frame_num)
         # img[..., i] = cam_obj.last_frame
         # plt.imshow(imgzaz[1120:1210, 1380:1470], cmap='inferno', vmax=65000)
-        imgF = cam_obj.last_frame - bckgr
-        img[..., i] = imgF[1230:1530, 1080:1380]
+        # imgF = cam_obj.last_frame - bckgr
+        # img[..., i] = imgF[1230:1530, 1080:1380]
+        img[..., i] = cam_obj.last_frame - bckgr
 
         aperture_power[i] = np.sum(img[..., i]) / (np.size(img[..., i]) * exp_time)
         print(aperture_power[i])
 
         if plot_within:
             fig = plt.figure()
-            plt.subplot(221), plt.imshow(imgF[:, :], cmap='inferno', vmin=0, vmax=100)
+            plt.subplot(221), plt.imshow(img[..., i][146:148, 152:154], cmap='inferno', vmin=0, vmax=100)
             plt.colorbar()
             plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
             plt.subplot(222), plt.imshow(masked_phase, cmap='inferno')
@@ -557,10 +568,11 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     laser_intensity_upscaled = np.pad(laser_intensity_upscaled, ((0, 0), (border_x, border_x)))
 
     "roi"
-    # cam_roi_pos = [1080, 1230]  # grat 10
-    # cam_roi_sz = [300, 300]  # grat 10 [1230: 1530, 1080: 1380]
-    # cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
-    #                     int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
+    cam_roi_pos = [1080, 1230]  # grat 10 [1230:1530, 1080:1380]
+    cam_roi_sz = [300, 300]  # grat 10
+    cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
+                        int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
+
 
     cam_obj.prep_acq()
     cam_obj.take_image()
@@ -576,7 +588,8 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         plt.colorbar(fraction=0.046, pad=0.04)
         plt.title('full IMG max V: {}'.format(np.amax(imgzaz)))
         plt.subplot(132)
-        plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
+        # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
+        plt.imshow(imgzaz, cmap='inferno', vmax=400)
         plt.colorbar(fraction=0.046, pad=0.04)
         plt.title("ROi IMG")
         plt.subplot(133)
@@ -596,6 +609,7 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     img = np.zeros((300, 300, roi_n ** 2))
     # img = np.zeros((img_size, img_size, roi_n ** 2))
     aperture_power = np.zeros(roi_n ** 2)
+    aperture_powah = np.zeros(roi_n ** 2)
     dt = []
     aperture_width_adj = np.zeros(roi_n ** 2)
 
@@ -625,8 +639,8 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
     if plo_che:
         fig = plt.figure()
-        # plt.imshow(bckgr, cmap='inferno', vmax=150)
-        plt.imshow(bckgr[1230:1530, 1080:1380], cmap='inferno', vmax=150)
+        plt.imshow(bckgr, cmap='inferno', vmax=150)
+        # plt.imshow(bckgr[1230:1530, 1080:1380], cmap='inferno', vmax=150)
         plt.colorbar(fraction=0.046, pad=0.04)
         # plt.colorbar()
         plt.title('backg')
@@ -644,7 +658,7 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     sh.shutter_state()
 
     'main lOOp'
-    plot_within = True
+    plot_within = False
     aperture_coverage = np.copy(zeros_full)
     iter_num = roi_n ** 2
     for i in range(iter_num):
@@ -695,11 +709,15 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         img_avg = cam_obj.last_frame - bckgr
 
         # imgF = cam_obj.last_frame - bckgr
-        imgF = img_avg[1230:1530, 1080:1380]
-        img[:, :, i] = np.copy(imgF)
+        # imgF = img_avg[1230:1530, 1080:1380]
+        # img[:, :, i] = np.copy(imgF)
+        img[:, :, i] = cam_obj.last_frame - bckgr
         # img[:, :, i] = np.copy(img_avg)
-        aperture_power[i] = np.mean(img[:, :, i]) * aperture_width ** 2 / aperture_width_adj[i] ** 2
+        # aperture_power[i] = np.mean(img[:, :, i]) * aperture_width ** 2 / aperture_width_adj[i] ** 2
+        aperture_power[i] = np.mean(img[..., i][146:148, 152:154]) * 3 ** 2 / 3 ** 2
         print("aperture_power[i]: {}".format(aperture_power[i]))
+        aperture_powah[i] = img[..., i][147, 153]
+        print("pxl_power[i]: {}".format(aperture_powah[i]))
 
         if plot_within:
             fig = plt.figure()
@@ -711,7 +729,7 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
             plt.title('iter: {}, pad is {}'.format(i, pad))
             plt.subplot(133), plt.imshow(img[..., i], cmap='inferno', vmin=0, vmax=200)
             plt.colorbar(fraction=0.046, pad=0.04)
-            plt.title('ROI ape_pow: {}'.format(aperture_power[i]))
+            plt.title('ROI ape_pow: {}, pxl_pow: {}'.format(aperture_power[i], aperture_powah[i]))
             # plt.show()
             # plt.show(block=False)
             fig.savefig(path + '\\iter_{}'.format(i) + '_phuz.png', dpi=300, bbox_inches='tight',
@@ -856,7 +874,7 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     else:
         plt.show()
 
-    img_size = 300
+    # img_size = 300
     fit_test = np.reshape(fit_sine.fit_sine(x_data, *popt_sv[-1]), (img_size, img_size))
 
     fig1 = plt.Figure()
@@ -871,20 +889,32 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
         fig1.savefig(path +'\\fit.png', dpi=300, bbox_inches='tight',
                     transparent=False)  # True trns worls nice for dispersion thinks I
-        plt.pause(0.8)
+        plt.pause(2)
         plt.close(fig1)
     else:
         plt.show()
 
-    # # Save data
-    # np.save(path + '//dphi', dphi)
-    # np.save(path + '//dphi_uw', dphi_uw)
-    # # np.save(path + '//cal_pos_x', cal_pos_x)
-    # # np.save(path + '//cal_pos_y', cal_pos_y)
-    # np.save(path + '//i_fit', i_fit)
-    # np.save(path + '//dphi_uw_mask', dphi_uw_mask)
-    # np.save(path + '//i_fit_mask', i_fit_mask)
-    # np.save(path + '//t', t)
-    # np.save(path + '//popt_sv', popt_sv)
-    # np.save(path + '//perr_sv', perr_sv)
+    power = np.reshape(aperture_power, (roi_n, roi_n))
+    powah = np.reshape(aperture_powah, (roi_n, roi_n))
+    np.save(path + '//powah', powah)
+    np.save(path + '//powah', power)
+    np.save(path + '//imgzz', img)
+
+    figPow = plt.Figure()
+    plt.subplot(121)
+    plt.imshow(powah, cmap='turbo')
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(122)
+    plt.imshow(power, cmap='turbo')
+    plt.colorbar(fraction=0.046, pad=0.04)
+    if saVe_plo:
+        plt.show(block=False)
+        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+        figPow.savefig(path +'\\powaher.png', dpi=300, bbox_inches='tight',
+                    transparent=False)  # True trns worls nice for dispersion thinks I
+        plt.pause(2)
+        plt.close(figPow)
+    else:
+        plt.show()
+
     return path + '//dphi_uw'

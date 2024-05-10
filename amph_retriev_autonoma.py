@@ -55,6 +55,7 @@ cam_roi_sz = [300, 300]
 # cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
 #                     int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
 cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
+cam_obj.exposure
 # cam_obj.take_image()
 # imgzaz = cam_obj.last_frame
 #
@@ -63,7 +64,7 @@ cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
 # plt.colorbar()
 # plt.show()
 
-measure_slm_intensity = False   # Measure the constant intensity at the SLM (laser beam profile)?
+measure_slm_intensity = True   # Measure the constant intensity at the SLM (laser beam profile)?
 measure_slm_phase = True       # Measure the constant phase at the SLM?
 
 "Measuring the constant intensity and phase at the SLM"
@@ -79,18 +80,20 @@ if measure_slm_intensity is True:
 if measure_slm_phase is True:
     # phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 30, 16, 64, 40000, 256, roi_min_x=2,
     #                                      roi_min_y=2, roi_n=26)
-    phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 30, 16,
-                                         64, 40000, 256, n_avg_frames=15, roi_min_x=0,
+    cam_obj.exposure()
+    phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 30, 32,
+                                         64, exp/1000, 256, n_avg_frames=15, roi_min_x=0,
                                          roi_min_y=0, roi_n=30)
     pms_obj.phi_path = phi_path
 
 
 cam_obj.end()
 
-load_existing = True
+load_existing = False
 saVe_plo = True
 # this_path = pms_obj.phi_path
-this_path = pms_obj.i_path
+# this_path = pms_obj.i_path
+this_path = "E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\amphase_result\\24-05-10_12-15-14_measure_slm_wavefront\\powah.npy"
 
 if load_existing:
     loaded_phuz = np.load(this_path)
@@ -117,17 +120,17 @@ if load_existing:
     # axs[1].set_ylabel("y [mm]", fontname='Cambria')
     # cbar = plt.colorbar(im, cax=ax_cb)
     # cbar.set_label('normalised intensity', fontname='Cambria')
-    # plt.show()
+    plt.show()
 
-    if saVe_plo:
-        plt.show(block=False)
-        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
-        loPhuz.savefig(this_path[:-9] +'\\int.png', dpi=300, bbox_inches='tight',
-                    transparent=False)  # True trns worls nice for dispersion thinks I
-        plt.pause(2.4)
-        plt.close()
-    else:
-        plt.show()
+    # if saVe_plo:
+    #     plt.show(block=False)
+    #     # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+    #     loPhuz.savefig(this_path[:-9] +'\\int.png', dpi=300, bbox_inches='tight',
+    #                 transparent=False)  # True trns worls nice for dispersion thinks I
+    #     plt.pause(2.4)
+    #     plt.close()
+    # else:
+    #     plt.show()
 
 
 
