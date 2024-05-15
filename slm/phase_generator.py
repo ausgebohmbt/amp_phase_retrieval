@@ -4,7 +4,7 @@ import os
 import glob
 from PIL import Image
 from slm.helpers import unimOD, normalize, center_overlay, center_crop, tiler
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from math import factorial
 
 
@@ -242,6 +242,7 @@ class PhaseGen:
         # combined = np.add(np.add(gra, le), np.add(phu, am))
         # mOD = unimOD(combined)
         # pha_ce = center_overlay(self.slmX, self.slmY, mOD)
+        # print(self.whichphuzzez)
         # plt.subplot(121), plt.imshow(crxn_pat, cmap='inferno')
         # plt.colorbar()
         # plt.title("crxn_pat")
@@ -249,11 +250,24 @@ class PhaseGen:
         # plt.colorbar()
         # plt.title("gra")
         # plt.show()
-        lg = center_overlay(self.slmX, self.slmY, phagen.lgPhu_mod)
-        comb = np.add(crxn_pat, gra)
-        combo = np.add(comb, lg)
+
+        # ------------ lg case --------------------
+        # lg = center_overlay(self.slmX, self.slmY, phagen.lgPhu_mod)
+        # comb = np.add(crxn_pat, gra)
+        # combo = np.add(comb, lg)
+        # -----------------------------------------
+
+        combo = np.add(crxn_pat, gra)
         phuz = unimOD(combo) * self.modDepth
         self.final_phuz = phuz.astype('uint8')
+        # figph = plt.figure()
+        # plt.imshow(self.final_phuz, cmap='inferno')
+        # plt.colorbar()
+        # plt.title("in_phuzGen")
+        # plt.show()
+        # plt.show(block=False)
+        # plt.pause(1)
+        # plt.close(figph)
 
     def spin_to_phase(self, spin: np.ndarray, theta: float) -> np.ndarray:
         # fixme: check this thoroughly, I think that by introducing the mod-depth from the slm [or even brettah include
@@ -418,6 +432,6 @@ class PhaseGen:
 
 phagen = PhaseGen()
 phagen.correction_patt()
-phagen.laguerre_beam(r0=(0, 0), A=1, order_rdl=0, order_ang=1, z=0.01, z0=0)
+# phagen.laguerre_beam(r0=(0, 0), A=1, order_rdl=0, order_ang=1, z=0.01, z0=0)
 
 # es el finAl

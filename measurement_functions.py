@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 # from peripheral_instruments.thorlabs_shutter import shutter as sh
 from colorama import Fore, Style  # , Back
+
+import slm.helpers
 from slm.phase_generator import phagen as phuzGen
 import copy
 
@@ -849,3 +851,279 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     np.save(path + '//popt_sv', popt_sv)
     np.save(path + '//perr_sv', perr_sv)
     return path + '//dphi_uw'
+
+
+def way_of_the_lens(slm_disp_obj, cam_obj, pms_obj, aperture_number, aperture_width, exp_time, spot_pos, roi_width):
+    """
+    This function measures the intensity profile of the laser beam incident onto the SLM by displaying a sequence of
+    rectangular phase masks on the SLM. The phase mask contains a linear phase which creates a diffraction spot on the
+    camera. The position of the phase mask is varied across the entire area of the SLM and the intensity of each
+    diffraction spot is measured using the camera. Read the SI of https://doi.org/10.1038/s41598-023-30296-6 for
+    details.
+
+    :param slm_disp_obj: Instance of your own subclass of ``hardware.SlmBase``.
+    :param cam_obj: Instance of your own subclass of ``hardware.CameraBase``.
+    :param aperture_number: Number of square regions along x/ y.
+    :param aperture_width: Width of square regions [px].
+    :param exp_time: Exposure time.
+    :param spot_pos: x/y position of the diffraction spot in th computational Fourier plane [Fourier pixels].
+    :param roi_width: Width of the region of interest on the camera [camera pixels].
+    :return:
+    """
+    # roi_mem = cam_obj.roi_is
+    date_saved = time.strftime('%y-%m-%d_%H-%M-%S', time.localtime())
+    path = pms_obj.data_path + '_' + 'back2thePrimitive'
+    # path = pms_obj.data_path + date_saved + '_' + 'measure_slm_intensity'
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+    res_y, res_x = 1024, 1272
+    border_x = int(np.abs(res_x - res_y) // 2)
+    npix = 1024
+
+    zeros = np.zeros((npix, npix))
+    zeros_full = np.zeros((npix, np.max(1272)))
+
+    lin_phase = np.array([-spot_pos, -spot_pos])
+    slm_phase4me = init_pha(np.zeros((1024, 1024)), 1272, 12.5e-6,
+                         pms_obj, lin_phase=lin_phase)
+    slm_phaseOUT = init_pha(np.zeros((aperture_width, aperture_width)), 1272, 12.5e-6,
+                         pms_obj, lin_phase=lin_phase)
+    slm_idx = get_aperture_indices(aperture_number, aperture_number, border_x, npix + border_x, 0, npix, aperture_width,
+                                   aperture_width)
+
+    slm_phase4me = slm.helpers.center_overlay(1272, 1024, slm_phase4me)
+    slm_phase4me = np.remainder(slm_phase4me, 2 * np.pi)
+    slm_phase4me = np.fliplr(slm_phase4me)
+    slm_phaseNOR = normalize(slm_phase4me)
+
+    # plt.imshow(slm_phaseNOR, cmap='inferno')
+    # plt.colorbar()
+    # plt.title("slm_phaseNOR")
+    # plt.show()
+
+    phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
+    # phuzGen.linear_grating()
+    phuzGen.grat = slm_phaseNOR
+    phuzGen._make_full_slm_array()
+    slm_phase = phuzGen.final_phuz
+
+    # figph = plt.figure()
+    # plt.imshow(slm_phase, cmap='inferno')
+    # plt.colorbar()
+    # plt.title("phi_centre")
+    # # plt.show()
+    # plt.show(block=False)
+    # # fig.savefig(path + '\\iter_{}'.format(i) + '_full.png', dpi=300, bbox_inches='tight',
+    # #             transparent=False)  # True trns worls nice for dispersion thinks I
+    # plt.pause(0.8)
+    # plt.close(figph)
+
+    phi_centre = normalize(slm_phase)*220
+    # phi_centreMA = normalize(phi_centreMA)*220
+    # phi_centreMA = phi_centreMA[:aperture_width, :aperture_width]
+
+    plo_che = False
+    if plo_che:
+        fig = plt.figure()
+        plt.subplot(221), plt.imshow(slm_phase4me, cmap='inferno')
+        plt.colorbar()
+        plt.title('slm_phase4me, theirs normalized')
+        plt.subplot(222), plt.imshow(slm_phase, cmap='inferno')
+        plt.colorbar()
+        plt.title('slm_phase')
+        plt.subplot(223), plt.imshow(phi_centre, cmap='inferno')
+        plt.colorbar()
+        plt.title('phi_centre')
+        # plt.subplot(224), plt.imshow(phi_centreMA, cmap='inferno')
+        # plt.colorbar()
+        # plt.title('phi_centreMAap')
+        # plt.show()
+        plt.show(block=False)
+        # fig.savefig(path + '\\iter_{}'.format(i) + '_full.png', dpi=300, bbox_inches='tight',
+        #             transparent=False)  # True trns worls nice for dispersion thinks I
+        plt.pause(0.8)
+        plt.close(fig)
+
+
+
+
+    # measure_slm_intensity.img_exp_check = cam_obj.get_image(exp_time)
+    # measure_slm_intensity.img_exp_check = cam_obj.take_image()
+
+    # # Find Camera position with respect to SLM
+    # popt_clb, img_cal = find_camera_position(slm_disp_obj, cam_obj, pms_obj, lin_phase, exp_time=exp_time / 10,
+    #                                          aperture_diameter=npix // 20, roi=[400, 400])
+    #
+    # lin_phase = np.array([-spot_pos, -spot_pos])
+    # slm_phase = pt.init_phase(np.zeros((aperture_width, aperture_width)), slm_disp_obj, pms_obj, lin_phase=lin_phase)
+    # # slm_phase = np.remainder(slm_phase, 2 * np.pi)
+    # slm_phase = np.flipud(np.fliplr(slm_phase))
+    #
+
+    # # ny, nx = cam_obj.res
+    # ny, nx = img_cal.shape
+    # calib_pos_x = int(popt_clb[0] + nx // 2)
+    # calib_pos_y = int(popt_clb[1] + ny // 2)
+
+    # plt.figure()
+    # plt.imshow(img_cal, cmap='inferno', vmax=1000)
+    # plt.plot(calib_pos_x, calib_pos_y, 'wx', color='g')
+    # plt.title('Camera image and fitted spot position')
+    # plt.show()
+
+    # Take camera images
+    # print("roi_width, {}".format(roi_width))
+    # print("int((calib_pos_y - roi_width / 2) // 2 * 2), {}".format(int((calib_pos_y - roi_width / 2) // 2 * 2)))
+    # print("int((calib_pos_x - roi_width / 2) // 2 * 2), {}".format(int((calib_pos_x - roi_width / 2) // 2 * 2)))
+    # roi = [roi_width, roi_width, int((calib_pos_x - roi_width / 2) // 2 * 2),
+    #        int((calib_pos_y - roi_width / 2) // 2 * 2)]
+    # cam_obj.roi = roi
+
+    # cam_obj.start(aperture_number ** 2)
+    # cam_obj.num = aperture_number ** 2
+    # cam_obj.num = aperture_number
+    # cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
+
+    print(Fore.LIGHTGREEN_EX + "record background" + Style.RESET_ALL)
+
+
+    # img = np.zeros((ny, nx, aperture_number ** 2))
+
+    img = np.zeros((90, 90, aperture_number ** 2))
+    # img = np.zeros((bckgr.shape[0], bckgr.shape[1], aperture_number ** 2))
+
+    # img = np.zeros((roi[1], roi[0], aperture_number ** 2))
+    aperture_power = np.zeros(aperture_number ** 2)
+    # slm_phase = normalize(slm_phase)*200phi_centre
+    slm_phase = phi_centre[:aperture_width, 124:124+aperture_width]
+
+    # figph = plt.figure()
+    # plt.subplot(121), plt.imshow(phi_centre, cmap='inferno')
+    # plt.colorbar(fraction=0.046, pad=0.04)
+    # plt.title("phi_centre")
+    # plt.subplot(122), plt.imshow(slm_phase, cmap='inferno')
+    # plt.colorbar(fraction=0.046, pad=0.04)
+    # plt.title("slm_phase")
+    # plt.show()
+    # plt.show(block=False)
+    # plt.pause(0.8)
+    # plt.close(figph)
+
+
+    plot_within = True
+    # here = [108, 109, 110]
+    # here = [434, 435, 436]
+    dt = np.zeros(aperture_number ** 2)
+
+    # many_iter = range(aperture_number ** 2)
+    dem_vz = [6, 5, 3, 2]
+    many_iter = len(dem_vz)
+    for i in range(many_iter):
+        # i = (aperture_number ** 2) // 2 - aperture_number // 2
+        # i = i-3
+        print("iter {} of {}".format(i, aperture_number ** 2))
+        t_start = time.time()
+        # masked_phase = np.copy(zeros_full)
+        masked_phase = np.zeros((npix, np.max(1272)))
+        # masked_phase[slm_idx[0][i]:slm_idx[1][i], slm_idx[2][i]:slm_idx[3][i]] = slm_phase
+        # moded = slm_idx[2] % 4
+        # print(moded)
+        for j in range(len(slm_idx[0])):
+            if (j - j*30) % dem_vz[i] == 0:
+                print('jah be runnin')
+            # if slm_idx[2][j] % 4 == 0:
+                masked_phase[slm_idx[0][j]:slm_idx[1][j], slm_idx[2][j]:slm_idx[3][j]] = slm_phase
+        aa = 0
+        for j in range(0, len(slm_idx[0])+64, 32):
+            if aa % 2 == 0:
+                print('jah be here {}'.format(j))
+                masked_phase[j:j+32, :] = 0
+                print('jah be stu {}, jah be gka {}'.format((j)*1, j+32))
+                print('jah diff is {}'.format(((j) * 1) -  (j + 32)))
+                print('aaa a a a {}'.format(aa))
+            aa += 1
+
+        # img[..., i] = cam_obj.last_frame
+        # plt.imshow(imgzaz[1120:1210, 1380:1470], cmap='inferno', vmax=65000)
+
+        aperture_power[i] = np.sum(img[..., i]) / (np.size(img[..., i]) * exp_time)
+        print(aperture_power[i])
+
+        if plot_within:
+            fig = plt.figure()
+            plt.subplot(121), plt.imshow(masked_phase, cmap='inferno', vmax=150)
+            plt.colorbar(fraction=0.046, pad=0.04)
+            plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
+            plt.subplot(122), plt.imshow(slm_phase, cmap='inferno')
+            plt.colorbar(fraction=0.046, pad=0.04)
+            plt.title('iter: {}'.format(i))
+            # plt.show()
+            plt.show(block=False)
+            # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+            fig.savefig(path + '\\iter_{}'.format(i) + '_full.png', dpi=300, bbox_inches='tight',
+                        transparent=False)  # True trns worls nice for dispersion thinks I
+            plt.pause(0.8)
+            plt.close(fig)
+
+        dt[i] = time.time() - t_start
+        print("time of iter: {}".format(dt[i]))
+    # cam_obj.stop()
+    # cam_obj.roi = roi_mem
+
+    # np.save(path + '//img', img)
+    # np.save(path + '//aperture_power', aperture_power)
+    #
+    # # Find SLM intensity profile
+    # i_rec = np.reshape(aperture_power, (aperture_number, aperture_number))
+    # # Save data
+    # np.save(path + '//i_rec', i_rec)
+    #
+    # fig = plt.figure()
+    # plt.imshow(i_rec, cmap='inferno')
+    # plt.colorbar()
+    # plt.title("i_rec")
+    # plt.show()
+    #
+    # # Fit Gaussian to measured intensity
+    # extent_slm = (slm_disp_obj.slm_size[0] + aperture_width * slm_disp_obj.pitch) / 2
+    # x_fit = np.linspace(-extent_slm, extent_slm, aperture_number)
+    # x_fit, y_fit = np.meshgrid(x_fit, x_fit)
+    # sig_x, sig_y = pms_obj.beam_diameter, pms_obj.beam_diameter
+    # popt_slm, perr_slm = ft.fit_gaussian(i_rec, dx=0, dy=0, sig_x=sig_x, sig_y=sig_y, xy=[x_fit, y_fit])
+    #
+    # i_fit_slm = pt.gaussian(slm_disp_obj.meshgrid_slm[0], slm_disp_obj.meshgrid_slm[1], *popt_slm)
+    #
+    # # Plotting
+    # extent_slm_mm = extent_slm * 1e3
+    # extent = [-extent_slm_mm, extent_slm_mm, -extent_slm_mm, extent_slm_mm]
+    #
+    # fig, axs = plt.subplots(1, 2)
+    # divider = make_axes_locatable(axs[0])
+    # ax_cb = divider.new_horizontal(size="5%", pad=0.05)
+    # im = axs[0].imshow(i_rec / np.max(i_rec), cmap='turbo', extent=extent)
+    # axs[0].set_title('Intensity at SLM Aperture', fontname='Cambria')
+    # axs[0].set_xlabel("x [mm]", fontname='Cambria')
+    # axs[0].set_ylabel("y [mm]", fontname='Cambria')
+    #
+    # divider = make_axes_locatable(axs[1])
+    # ax_cb = divider.new_horizontal(size="5%", pad=0.05)
+    # fig.add_axes(ax_cb)
+    # im = axs[1].imshow(i_fit_slm / np.max(i_fit_slm), cmap='turbo', extent=extent)
+    # axs[1].set_title('Fitted Gaussian', fontname='Cambria')
+    # axs[1].set_xlabel("x [mm]", fontname='Cambria')
+    # axs[1].set_ylabel("y [mm]", fontname='Cambria')
+    # cbar = plt.colorbar(im, cax=ax_cb)
+    # cbar.set_label('normalised intensity', fontname='Cambria')
+    # plt.show()
+    #
+    # plt.figure()
+    # plt.imshow(img[..., (aperture_number ** 2 - aperture_number) // 2], cmap='turbo')
+    # plt.title('Camera image of central sub-aperture')
+    # plt.show()
+    #
+    # # Save data
+    # # np.save(path + '//i_rec', i_rec)
+    # np.save(path + '//i_fit_slm', i_fit_slm)
+    # np.save(path + '//popt_slm', popt_slm)
+    return path + '//i_rec'

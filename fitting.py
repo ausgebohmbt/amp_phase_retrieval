@@ -122,6 +122,7 @@ class FitSine:
         :param args: Args passed to patterns.fringes_wavefront
         :return: 2D sine.
         """
+        # print("*args are: {}".format(*args))
         x, y = xy
         arr = pt.fringes_wavefront(x, y, self.dx, self.dy, self.k, self.fl, *args)
         return arr

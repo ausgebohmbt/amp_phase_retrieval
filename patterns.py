@@ -343,6 +343,7 @@ def fringes_wavefront(x, y, dx, dy, k, f, phi, a, b):
     """
     gamma_x = np.arctan(dx / (np.abs(f) + 1e-12))  # x component of angle between reference and sample beam
     gamma_y = np.arctan(dy / (np.abs(f) + 1e-12))  # y component of angle between reference and sample beam
+    # print("phi is: {}".format(phi))
     i_out = a ** 2 + b ** 2 + 2 * a * b * np.cos(k * (np.sin(gamma_x) * x + np.sin(gamma_y) * y) + phi)
     return i_out
 

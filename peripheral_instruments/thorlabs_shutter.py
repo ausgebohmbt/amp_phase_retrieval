@@ -38,8 +38,8 @@ class Shutter():
         time.sleep(0.4)
         # print(Fore.LIGHTGREEN_EX + "shutState psotQUERY" + Style.RESET_ALL)
         self.shut_state = int(self.my_instrument.read())  # value is returned as str
-        print(self.coloz[self.shut_state] + "shutter is found {}".format(self.string_state[self.shut_state])
-              + Style.RESET_ALL)
+        # print(self.coloz[self.shut_state] + "shutter is found {}".format(self.string_state[self.shut_state])
+        #       + Style.RESET_ALL)
         # self.end()
 
     def shutter_enable(self):

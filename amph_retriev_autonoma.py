@@ -64,8 +64,8 @@ cam_obj.exposure
 # plt.colorbar()
 # plt.show()
 
-measure_slm_intensity = True   # Measure the constant intensity at the SLM (laser beam profile)?
-measure_slm_phase = False       # Measure the constant phase at the SLM?
+measure_slm_intensity = False   # Measure the constant intensity at the SLM (laser beam profile)?
+measure_slm_phase = True       # Measure the constant phase at the SLM?
 
 "Measuring the constant intensity and phase at the SLM"
 if measure_slm_intensity is True:
@@ -82,7 +82,7 @@ if measure_slm_phase is True:
     #                                      roi_min_y=2, roi_n=26)
     cam_obj.exposure
     phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 30, 16,
-                                         64, exp/1000, 256, n_avg_frames=5, roi_min_x=0,
+                                         64, exp/1000, 256, n_avg_frames=10, roi_min_x=0,
                                          roi_min_y=0, roi_n=30)
     pms_obj.phi_path = phi_path
 
