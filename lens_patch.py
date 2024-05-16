@@ -13,20 +13,56 @@ from slm.phase_generator import phagen as phuzGen
 from slm.helpers import unimOD, normalize, center_overlay, center_crop, tiler
 
 from experiment import Params#, Camera, SlmDisp
-
+import orca.orca_autonoma as Cam
+# from orca.hamamatsu_camera import n_cameras as numb_cam
+from slm.slm_hama_amphase import slm
 from colorama import Fore, Style  # , Back
 
 pms_obj = Params()
-print("pms_obj.k")
-print(pms_obj.k)
-print("lamda")
-print(pms_obj.wavelength)
-print(2 * np.pi / pms_obj.wavelength)
+# print("pms_obj.k")
+# print(pms_obj.k)
+# print("lamda")
+# print(pms_obj.wavelength)
+# print(2 * np.pi / pms_obj.wavelength)
 
-slm_disp_obj = None
-cam_obj = None
-exp = 100
+
+exp = 15
+params = {'exposure': exp/1000, "initCam": True,
+          "came_numb": 0, "trig_mODe": 1}
+# phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
+# phuzGen.linear_grating()
+
+pms_obj = Params()
+cam_obj = Cam.LiveHamamatsu(**params)
+slm_disp_obj = slm
+# cam_obj = Camera(np.array([960, 1280]), 3.75e-6, bayer=True)    # fixme: pitch used for cam size
+# slm_disp_obj = SlmDisp(np.array([1024, 1280]), 12.5e-6)         # fixme: pitch used meshgrid
+
+"upload phuz"
+# slm.current_phase = phuzGen.final_phuz
+# slm.load_phase(slm.current_phase)
+
+"init cam"
+cam_obj.mode = "Acq"
+cam_obj.num = 1
+cam_obj.bin_sz = 1
+# cam_roi_pos = (936, 942)
+# cam_roi_sz = (788, 182)
+cam_roi_pos = [175, 1400]
 cam_roi_sz = [300, 300]
+# cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
+#                     int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
+
+# "take test img"
+# cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
+#                     int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
+cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
+cam_obj.exposure
+
+# slm_disp_obj = None
+# cam_obj = None
+# exp = 100
+# cam_roi_sz = [300, 300]
 fl = pms_obj.fl
 fit_sine = ft.FitSine(fl, pms_obj.k)
 
@@ -37,8 +73,8 @@ if simulension is True:
     pass
     # phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 30, 16, 64, 40000, 256, roi_min_x=2,
     #                                      roi_min_y=2, roi_n=26)
-    phi_path = mfunc.way_of_the_lens(slm_disp_obj, cam_obj, pms_obj, 30, 32,
-                                         64, 40000, 256)
+    phi_path = mfunc.way_of_the_lens(slm_disp_obj, cam_obj, pms_obj, 30, 11,
+                                         exp/1000, 40000, 256)
     # pms_obj.phi_path = phi_path
 
 

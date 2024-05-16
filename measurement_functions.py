@@ -10,7 +10,7 @@ import error_metrics as m, patterns as pt, fitting as ft
 import scipy.optimize as opt
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-# from peripheral_instruments.thorlabs_shutter import shutter as sh
+from peripheral_instruments.thorlabs_shutter import shutter as sh
 from colorama import Fore, Style  # , Back
 
 import slm.helpers
@@ -877,121 +877,157 @@ def way_of_the_lens(slm_disp_obj, cam_obj, pms_obj, aperture_number, aperture_wi
     if not os.path.exists(path):
         os.mkdir(path)
 
-    res_y, res_x = 1024, 1272
+    res_y, res_x = slm_disp_obj.res
     border_x = int(np.abs(res_x - res_y) // 2)
-    npix = 1024
+    npix = np.min(slm_disp_obj.res)
 
     zeros = np.zeros((npix, npix))
-    zeros_full = np.zeros((npix, np.max(1272)))
+    zeros_full = np.zeros((npix, np.max(slm_disp_obj.res)))
 
     lin_phase = np.array([-spot_pos, -spot_pos])
-    slm_phase4me = init_pha(np.zeros((1024, 1024)), 1272, 12.5e-6,
+    slm_phase4me = pt.init_phase(np.zeros((1024, 1272)), slm_disp_obj,
                          pms_obj, lin_phase=lin_phase)
-    slm_phaseOUT = init_pha(np.zeros((aperture_width, aperture_width)), 1272, 12.5e-6,
+    slm_phaseOUT = pt.init_phase(np.zeros((aperture_width, aperture_width)), slm_disp_obj,
                          pms_obj, lin_phase=lin_phase)
+
+    # slm_phase = pt.init_phase(np.zeros((aperture_width, aperture_width)), slm_disp_obj, pms_obj, lin_phase=lin_phase)
+    slm_phase = np.remainder(slm_phaseOUT, 2 * np.pi)
+    slm_phase4me = np.remainder(slm_phase4me, 2 * np.pi)
+    slm_phase4me = np.fliplr(slm_phase4me)
+    # slm_phase = np.remainder(slm_phase, 2 * np.pi)
+    slm_phase = slm_phase4me
+    # slm_phase = np.flipud(np.fliplr(slm_phase))
     slm_idx = get_aperture_indices(aperture_number, aperture_number, border_x, npix + border_x, 0, npix, aperture_width,
                                    aperture_width)
 
-    slm_phase4me = slm.helpers.center_overlay(1272, 1024, slm_phase4me)
-    slm_phase4me = np.remainder(slm_phase4me, 2 * np.pi)
-    slm_phase4me = np.fliplr(slm_phase4me)
-    slm_phaseNOR = normalize(slm_phase4me)
+    # Display central sub-aperture on SLM and check if camera is over-exposed.
+    i = (aperture_number ** 2) // 2 - aperture_number // 2
+    phi_centre = np.zeros_like(zeros)
+    # phi_centre[slm_idx[0][i]:slm_idx[1][i], slm_idx[2][i]:slm_idx[3][i]] = slm_phase
+    phi_centre = slm_phase
+    slm_phaseNOR = normalize(slm_phase)
 
     # plt.imshow(slm_phaseNOR, cmap='inferno')
     # plt.colorbar()
     # plt.title("slm_phaseNOR")
     # plt.show()
 
+    print("mk phuz 4 skm")
+    # phuzGen.diviX = 10
+    # phuzGen.diviY = 10
     phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
     # phuzGen.linear_grating()
     phuzGen.grat = slm_phaseNOR
     phuzGen._make_full_slm_array()
-    slm_phase = phuzGen.final_phuz
+    phi_centre = phuzGen.final_phuz
+    phi_centre = normalize(phi_centre)*220
 
-    # figph = plt.figure()
-    # plt.imshow(slm_phase, cmap='inferno')
-    # plt.colorbar()
-    # plt.title("phi_centre")
-    # # plt.show()
-    # plt.show(block=False)
-    # # fig.savefig(path + '\\iter_{}'.format(i) + '_full.png', dpi=300, bbox_inches='tight',
-    # #             transparent=False)  # True trns worls nice for dispersion thinks I
-    # plt.pause(0.8)
-    # plt.close(figph)
-
-    phi_centre = normalize(slm_phase)*220
-    # phi_centreMA = normalize(phi_centreMA)*220
-    # phi_centreMA = phi_centreMA[:aperture_width, :aperture_width]
-
-    plo_che = False
-    if plo_che:
-        fig = plt.figure()
-        plt.subplot(221), plt.imshow(slm_phase4me, cmap='inferno')
-        plt.colorbar()
-        plt.title('slm_phase4me, theirs normalized')
-        plt.subplot(222), plt.imshow(slm_phase, cmap='inferno')
-        plt.colorbar()
-        plt.title('slm_phase')
-        plt.subplot(223), plt.imshow(phi_centre, cmap='inferno')
-        plt.colorbar()
-        plt.title('phi_centre')
-        # plt.subplot(224), plt.imshow(phi_centreMA, cmap='inferno')
-        # plt.colorbar()
-        # plt.title('phi_centreMAap')
-        # plt.show()
-        plt.show(block=False)
-        # fig.savefig(path + '\\iter_{}'.format(i) + '_full.png', dpi=300, bbox_inches='tight',
-        #             transparent=False)  # True trns worls nice for dispersion thinks I
-        plt.pause(0.8)
-        plt.close(fig)
-
-
-
-
-    # measure_slm_intensity.img_exp_check = cam_obj.get_image(exp_time)
-    # measure_slm_intensity.img_exp_check = cam_obj.take_image()
-
-    # # Find Camera position with respect to SLM
-    # popt_clb, img_cal = find_camera_position(slm_disp_obj, cam_obj, pms_obj, lin_phase, exp_time=exp_time / 10,
-    #                                          aperture_diameter=npix // 20, roi=[400, 400])
+    # # "upload phuz 2 slm"
+    # # slm_disp_obj.display(phi_centre)
+    # #
+    # # figph = plt.figure()
+    # # plt.imshow(phi_centre, cmap='inferno')
+    # # plt.colorbar()
+    # # plt.title("phi_centre")
+    # # # plt.show()
+    # # plt.show(block=False)
+    # # plt.pause(1)
+    # # plt.close(figph)
+    # #
+    # #
+    # # "open shutter"
+    # # sh.shutter_state()
+    # # time.sleep(0.1)
+    # # if sh.shut_state == 0:
+    # #     sh.shutter_enable()
+    # # time.sleep(0.4)
+    # # sh.shutter_state()
+    # #
+    # # # Take camera image
+    # # cam_obj.prep_acq()
+    # # cam_obj.take_image()
+    # # imgzaz = cam_obj.last_frame
+    # #
+    # # plo_che = True
+    # # if plo_che:
+    # #     fig = plt.figure()
+    # #     # plt.imshow(imgzaz, cmap='inferno')
+    # #     plt.imshow(imgzaz, cmap='inferno', vmax=5000)
+    # #     plt.colorbar()
+    # #     plt.title("full IMG")
+    # #     # plt.show()
+    # #     plt.show(block=False)
+    # #     plt.pause(1)
+    # #     plt.close(fig)
+    # #
+    # #     " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+    # #     " set roi or else "
+    # #     " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+    # #
+    # #     # cam_roi_pos = [1080, 1230]  # grat 10 [1230:1530, 1080:1380]
+    # #     # # cam_roi_pos = [874, 874]  # grat 10 [1230:1530, 1080:1380]
+    # #     # cam_roi_sz = [300, 300]  # grat 10
+    # #     # cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
+    # #     #                     int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
+    # #
+    # #     cam_obj.stop_acq()
+    # #     cam_obj.exposure = 0.1/1000
+    # #     cam_obj.prep_acq()
+    # #     cam_obj.take_image()
+    # #     imgzaz = cam_obj.last_frame
+    # #     cam_obj.exposure = exp_time
+    # #
+    # #     plo_che = True
+    # #     if plo_che:
+    # #         fig = plt.figure()
+    # #         # plt.imshow(imgzaz, cmap='inferno', vmax=1500)  # grat 10
+    # #         plt.imshow(imgzaz[1156:1456, 1170:1470], cmap='inferno', vmax=500)  # grat 10
+    # #         plt.colorbar()
+    # #         plt.title("ROi IMG")
+    # #         # plt.show()
+    # #         plt.show(block=False)
+    # #         plt.pause(0.8)
+    # #         plt.close(fig)
+    # #
+    # #     print(Fore.LIGHTGREEN_EX + "record background" + Style.RESET_ALL)
+    # #
+    # #     "close shutter"
+    # #     sh.shutter_state()
+    # #     time.sleep(0.4)
+    # #     if sh.shut_state == 1:
+    # #         sh.shutter_enable()
+    # #     time.sleep(0.4)
+    # #     sh.shutter_state()
+    # #
+    # #     frame_num = 1
+    # #     cam_obj.stop_acq()
+    # #
+    # #     # cam_obj.prep_acq()
+    # #     cam_obj.take_average_image(frame_num)
+    # #     cam_obj.bckgr = copy.deepcopy(cam_obj.last_frame)
+    # #     bckgr = copy.deepcopy(cam_obj.bckgr)
+    # #
+    # #     if plo_che:
+    # #         fig = plt.figure()
+    # #         plt.imshow(bckgr, cmap='inferno', vmax=150)
+    # #         # plt.imshow(bckgr[1230:1530, 1080:1380], cmap='inferno', vmax=150)
+    # #         plt.colorbar()
+    # #         plt.title('backg')
+    # #         # plt.show()
+    # #         plt.show(block=False)
+    # #         plt.pause(1)
+    # #         plt.close(fig)
+    # #
+    # #     "open shutter"
+    # #     sh.shutter_state()
+    # #     time.sleep(0.1)
+    # #     if sh.shut_state == 0:
+    # #         sh.shutter_enable()
+    # #     time.sleep(0.4)
+    # #     sh.shutter_state()
     #
-    # lin_phase = np.array([-spot_pos, -spot_pos])
-    # slm_phase = pt.init_phase(np.zeros((aperture_width, aperture_width)), slm_disp_obj, pms_obj, lin_phase=lin_phase)
-    # # slm_phase = np.remainder(slm_phase, 2 * np.pi)
-    # slm_phase = np.flipud(np.fliplr(slm_phase))
-    #
-
-    # # ny, nx = cam_obj.res
-    # ny, nx = img_cal.shape
-    # calib_pos_x = int(popt_clb[0] + nx // 2)
-    # calib_pos_y = int(popt_clb[1] + ny // 2)
-
-    # plt.figure()
-    # plt.imshow(img_cal, cmap='inferno', vmax=1000)
-    # plt.plot(calib_pos_x, calib_pos_y, 'wx', color='g')
-    # plt.title('Camera image and fitted spot position')
-    # plt.show()
-
-    # Take camera images
-    # print("roi_width, {}".format(roi_width))
-    # print("int((calib_pos_y - roi_width / 2) // 2 * 2), {}".format(int((calib_pos_y - roi_width / 2) // 2 * 2)))
-    # print("int((calib_pos_x - roi_width / 2) // 2 * 2), {}".format(int((calib_pos_x - roi_width / 2) // 2 * 2)))
-    # roi = [roi_width, roi_width, int((calib_pos_x - roi_width / 2) // 2 * 2),
-    #        int((calib_pos_y - roi_width / 2) // 2 * 2)]
-    # cam_obj.roi = roi
-
-    # cam_obj.start(aperture_number ** 2)
-    # cam_obj.num = aperture_number ** 2
-    # cam_obj.num = aperture_number
-    # cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
-
-    print(Fore.LIGHTGREEN_EX + "record background" + Style.RESET_ALL)
-
-
-    # img = np.zeros((ny, nx, aperture_number ** 2))
-
-    img = np.zeros((90, 90, aperture_number ** 2))
-    # img = np.zeros((bckgr.shape[0], bckgr.shape[1], aperture_number ** 2))
+    #     # img = np.zeros((300, 300, aperture_number ** 2))
+    #     img = np.zeros((bckgr.shape[0], bckgr.shape[1], aperture_number ** 2))
 
     # img = np.zeros((roi[1], roi[0], aperture_number ** 2))
     aperture_power = np.zeros(aperture_number ** 2)
@@ -1010,64 +1046,135 @@ def way_of_the_lens(slm_disp_obj, cam_obj, pms_obj, aperture_number, aperture_wi
     # plt.pause(0.8)
     # plt.close(figph)
 
-
     plot_within = True
     # here = [108, 109, 110]
     # here = [434, 435, 436]
     dt = np.zeros(aperture_number ** 2)
 
+    slm_phase = np.copy(phi_centre)
+
     # many_iter = range(aperture_number ** 2)
-    dem_vz = [6, 5, 3, 2]
-    many_iter = len(dem_vz)
+    # dem_vz = [8, 7, 6, 5, 4, 3, 2, 1]
+    dem_vz = [1]
+
+    # many_iter = len(dem_vz) + 1
+    many_iter = 1
+    print('many_iter {}'.format(many_iter))
     for i in range(many_iter):
-        # i = (aperture_number ** 2) // 2 - aperture_number // 2
-        # i = i-3
+        print('range(many_iter) {}'.format(range(many_iter)))
         print("iter {} of {}".format(i, aperture_number ** 2))
         t_start = time.time()
-        # masked_phase = np.copy(zeros_full)
-        masked_phase = np.zeros((npix, np.max(1272)))
-        # masked_phase[slm_idx[0][i]:slm_idx[1][i], slm_idx[2][i]:slm_idx[3][i]] = slm_phase
-        # moded = slm_idx[2] % 4
-        # print(moded)
-        for j in range(len(slm_idx[0])):
-            if (j - j*30) % dem_vz[i] == 0:
-                print('jah be runnin')
-            # if slm_idx[2][j] % 4 == 0:
-                masked_phase[slm_idx[0][j]:slm_idx[1][j], slm_idx[2][j]:slm_idx[3][j]] = slm_phase
-        aa = 0
-        for j in range(0, len(slm_idx[0])+64, 32):
-            if aa % 2 == 0:
-                print('jah be here {}'.format(j))
-                masked_phase[j:j+32, :] = 0
-                print('jah be stu {}, jah be gka {}'.format((j)*1, j+32))
-                print('jah diff is {}'.format(((j) * 1) -  (j + 32)))
-                print('aaa a a a {}'.format(aa))
-            aa += 1
+        masked_phase = slm_phase
 
-        # img[..., i] = cam_obj.last_frame
-        # plt.imshow(imgzaz[1120:1210, 1380:1470], cmap='inferno', vmax=65000)
+        if not i == 4:  # len(dem_vz) + 0:
+            print('is {}'.format(i))
+            aha_aa = 0
+            a_ha_aa = 0
+            for j in range(slm_phase.shape[0]):
+                if aha_aa <= aperture_width:
+                    # print('jah be cOOl {}'.format(j))
+                    aha_aa += 1
+                else:
+                    if a_ha_aa <= dem_vz[i]*aperture_width:
+                        # print('jah be here {}, a_ha_a_a {}'.format(j, a_ha_aa))
+                        masked_phase[j, :] = 0
+                        # masked_phase[:, j] = 0
+                        a_ha_aa += 1
+                    else:
+                        aha_aa = 0
+                        a_ha_aa = 0
+                        # print('something wicked be happenin {}, aha_a_a {}, a_ha_a_a {}'.format(j, aha_aa, a_ha_aa))
+                        # masked_phase[j, :] = 0
+            aha_aa = 0
+            a_ha_aa = 0
+            for j in range(slm_phase.shape[1]):
+                if aha_aa <= aperture_width:
+                    # print('jah be cOOl {}'.format(j))
+                    aha_aa += 1
+                else:
+                    if a_ha_aa <= dem_vz[i]*aperture_width:
+                        # print('jah be here {}, a_ha_a_a {}'.format(j, a_ha_aa))
+                        masked_phase[:, j] = 0
+                        a_ha_aa += 1
+                    else:
+                        aha_aa = 0
+                        a_ha_aa = 0
+                        # print('something wicked be happenin {}, aha_a_a {}, a_ha_a_a {}'.format(j, aha_aa, a_ha_aa))
 
-        aperture_power[i] = np.sum(img[..., i]) / (np.size(img[..., i]) * exp_time)
+            aha_aa = 0
+            a_ha_aa = 0
+            thatMu = slm_phase.shape[0]//aperture_width
+            for j in range(0, thatMu,aperture_width):
+                # if aha_aa % 2 == 0:
+                print('thatMu {}'.format(thatMu))
+                masked_phase[aha_aa+aperture_width:aha_aa+aperture_width+aperture_width+1, :] = 0
+                aha_aa += aperture_width
+            #     else:
+            #         if a_ha_aa <= dem_vz[i]*aperture_width:
+            #             # print('jah be here {}, a_ha_a_a {}'.format(j, a_ha_aa))
+            #             masked_phase[j, :] = 0
+            #             masked_phase[:, j] = 0
+            #             a_ha_aa += 1
+            #         else:
+            #             aha_aa = 0
+            #             a_ha_aa = 0
+            #             # print('something wicked be happenin {}, aha_a_a {}, a_ha_a_a {}'.format(j, aha_aa, a_ha_aa))
+            #             # masked_phase[j, :] = 0
+
+            # aha_aa = 0
+            # a_ha_aa = 0
+            # for j in range(slm_phase.shape[1]):
+            #     if aha_aa <= aperture_width:
+            #         # print('jah be cOOl {}'.format(j))
+            #         aha_aa += 1
+            #     else:
+            #         if a_ha_aa <= dem_vz[i]*aperture_width:
+            #             # print('jah be here {}, a_ha_a_a {}'.format(j, a_ha_aa))
+            #             masked_phase[:, j] = 0
+            #             a_ha_aa += 1
+            #         else:
+            #             aha_aa = 0
+            #             a_ha_aa = 0
+            #             # print('something wicked be happenin {}, aha_a_a {}, a_ha_a_a {}'.format(j, aha_aa, a_ha_aa))
+
+
+
+        # slm_disp_obj.display(masked_phase)
+        # cam_obj.take_average_image(frame_num)
+        # img[..., i] = cam_obj.last_frame - bckgr
+
+        # aperture_power[i] = np.sum(img[..., i]) / (np.size(img[..., i]) * exp_time)
+        aperture_power[i] = 1
         print(aperture_power[i])
 
         if plot_within:
             fig = plt.figure()
-            plt.subplot(121), plt.imshow(masked_phase, cmap='inferno', vmax=150)
+            plt.subplot(221), plt.imshow(masked_phase, cmap='inferno')
             plt.colorbar(fraction=0.046, pad=0.04)
             plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
-            plt.subplot(122), plt.imshow(slm_phase, cmap='inferno')
-            plt.colorbar(fraction=0.046, pad=0.04)
-            plt.title('iter: {}'.format(i))
-            # plt.show()
-            plt.show(block=False)
-            # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
-            fig.savefig(path + '\\iter_{}'.format(i) + '_full.png', dpi=300, bbox_inches='tight',
-                        transparent=False)  # True trns worls nice for dispersion thinks I
-            plt.pause(0.8)
-            plt.close(fig)
+            # plt.subplot(222), plt.imshow(img[..., i][1156:1456, 1170:1470], cmap='inferno', vmin=0, vmax=200)
+            # plt.colorbar(fraction=0.046, pad=0.04)
+            # plt.title('ROI IS')
+            # plt.subplot(223), plt.imshow(img[..., i], cmap='inferno', vmin=0, vmax=100)
+            # plt.colorbar(fraction=0.046, pad=0.04)
+            # plt.title("img full")
+            # plt.subplot(224), plt.imshow(img[..., i][1156:1456, 1170:1470], cmap='inferno', vmin=0, vmax=65500)
+            # plt.colorbar(fraction=0.046, pad=0.04)
+            plt.title('ROI IS')
+            plt.show()
+            # plt.show(block=False)
+            # fig.savefig(path + '\\iter_{}'.format(i) + '_full.png', dpi=300, bbox_inches='tight',
+            #             transparent=False)  # True trns worls nice for dispersion thinks I
+            # plt.pause(0.8)
+            # plt.close(fig)
+
+            # np.save(path + '\\iter_{}'.format(i) + '_full_11', img[..., i])
 
         dt[i] = time.time() - t_start
         print("time of iter: {}".format(dt[i]))
+
+        slm_phase = np.copy(phi_centre)
+
     # cam_obj.stop()
     # cam_obj.roi = roi_mem
 
