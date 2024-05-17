@@ -1056,6 +1056,12 @@ def way_of_the_lens(slm_disp_obj, cam_obj, pms_obj, aperture_number, aperture_wi
     # many_iter = range(aperture_number ** 2)
     # dem_vz = [8, 7, 6, 5, 4, 3, 2, 1]
     dem_vz = [1]
+    "# concentric baggage"
+    x = np.arange(0, slm_phase.shape[1])
+    y = np.arange(0, slm_phase.shape[0])
+    cx = (slm_phase.shape[1] // 2) - 6
+    cy = (slm_phase.shape[0] // 2) - 7
+    arrz = []
 
     # many_iter = len(dem_vz) + 1
     many_iter = 1
@@ -1101,43 +1107,39 @@ def way_of_the_lens(slm_disp_obj, cam_obj, pms_obj, aperture_number, aperture_wi
                         a_ha_aa = 0
                         # print('something wicked be happenin {}, aha_a_a {}, a_ha_a_a {}'.format(j, aha_aa, a_ha_aa))
 
-            aha_aa = 0
-            a_ha_aa = 0
-            thatMu = slm_phase.shape[0]//aperture_width
-            for j in range(0, thatMu,aperture_width):
-                # if aha_aa % 2 == 0:
-                print('thatMu {}'.format(thatMu))
-                masked_phase[aha_aa+aperture_width:aha_aa+aperture_width+aperture_width+1, :] = 0
-                aha_aa += aperture_width
-            #     else:
-            #         if a_ha_aa <= dem_vz[i]*aperture_width:
-            #             # print('jah be here {}, a_ha_a_a {}'.format(j, a_ha_aa))
-            #             masked_phase[j, :] = 0
-            #             masked_phase[:, j] = 0
-            #             a_ha_aa += 1
-            #         else:
-            #             aha_aa = 0
-            #             a_ha_aa = 0
-            #             # print('something wicked be happenin {}, aha_a_a {}, a_ha_a_a {}'.format(j, aha_aa, a_ha_aa))
-            #             # masked_phase[j, :] = 0
+            for k in range(0, 12, 2):
+                print(k)
+                arr = np.zeros((y.size, x.size))
+                if k == 0:
+                    r = 47
+                else:
+                    r = 47*k  # 47 leaves center
 
-            # aha_aa = 0
-            # a_ha_aa = 0
-            # for j in range(slm_phase.shape[1]):
-            #     if aha_aa <= aperture_width:
-            #         # print('jah be cOOl {}'.format(j))
-            #         aha_aa += 1
-            #     else:
-            #         if a_ha_aa <= dem_vz[i]*aperture_width:
-            #             # print('jah be here {}, a_ha_a_a {}'.format(j, a_ha_aa))
-            #             masked_phase[:, j] = 0
-            #             a_ha_aa += 1
-            #         else:
-            #             aha_aa = 0
-            #             a_ha_aa = 0
-            #             # print('something wicked be happenin {}, aha_a_a {}, a_ha_a_a {}'.format(j, aha_aa, a_ha_aa))
+                # The two lines below could be merged, but I stored the mask
+                # for code clarity.
+                mask = (x[np.newaxis, :] - cx) ** 2 + (y[:, np.newaxis] - cy) ** 2 < r ** 2
+                arr[mask] = 1
+                if k == 0:
+                    r = 9
+                else:
+                    r = 9*3*(k + k//1.5)  # 9 leaves center
+                mask2 = (x[np.newaxis, :] - cx) ** 2 + (y[:, np.newaxis] - cy) ** 2 < r ** 2
+                arr[mask2] = 0
 
+                trypio = masked_phase
+                mask[mask2] = 0
+                trypio[mask] = 0
 
+                figRIng = plt.figure()
+                plt.subplot(121), plt.imshow(trypio, cmap='inferno')
+                plt.colorbar(fraction=0.046, pad=0.04)
+                plt.title('k: {}'.format(k))
+                plt.subplot(122), plt.imshow(arr, cmap='inferno')
+                plt.colorbar(fraction=0.046, pad=0.04)
+                plt.title('ROI IS')
+                plt.show(block=False)
+                plt.pause(0.8)
+                plt.close(figRIng)
 
         # slm_disp_obj.display(masked_phase)
         # cam_obj.take_average_image(frame_num)
@@ -1155,11 +1157,11 @@ def way_of_the_lens(slm_disp_obj, cam_obj, pms_obj, aperture_number, aperture_wi
             # plt.subplot(222), plt.imshow(img[..., i][1156:1456, 1170:1470], cmap='inferno', vmin=0, vmax=200)
             # plt.colorbar(fraction=0.046, pad=0.04)
             # plt.title('ROI IS')
-            # plt.subplot(223), plt.imshow(img[..., i], cmap='inferno', vmin=0, vmax=100)
-            # plt.colorbar(fraction=0.046, pad=0.04)
-            # plt.title("img full")
-            # plt.subplot(224), plt.imshow(img[..., i][1156:1456, 1170:1470], cmap='inferno', vmin=0, vmax=65500)
-            # plt.colorbar(fraction=0.046, pad=0.04)
+            plt.subplot(223), plt.imshow(trypio, cmap='inferno')
+            plt.colorbar(fraction=0.046, pad=0.04)
+            plt.title("img full")
+            plt.subplot(224), plt.imshow(arr, cmap='inferno')
+            plt.colorbar(fraction=0.046, pad=0.04)
             plt.title('ROI IS')
             plt.show()
             # plt.show(block=False)
