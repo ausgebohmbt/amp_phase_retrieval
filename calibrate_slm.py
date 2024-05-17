@@ -420,7 +420,7 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         print("iter {} of {}".format(i, iter_num))
         print("estimated time left approx: {}'".format((numpy.mean(dt)*(iter_num-i)) / 60))
 
-    np.save(path + '//img', img)
+    # np.save(path + '//img', img)
     np.save(path + '//aperture_power', aperture_power)
 
     # Find SLM intensity profile
@@ -797,20 +797,14 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         print("time o iter: {}".format(dt[i]))
         print("iter {} of {}".format(i, iter_num))
         print("estimated time left approx: {}'".format((numpy.mean(dt)*(iter_num-i)) / 60))
+    t = np.cumsum(dt)
 
     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     "~~~ lOOp enD ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
-    # cam_obj.stop()
-    # cam_obj.roi = roi_mem
-    t = np.cumsum(dt)
-
-    # Save data
-    # date_saved = time.strftime('%y-%m-%d_%H-%M-%S', time.localtime())
-    # path = pms_obj.data_path + date_saved + '_measure_slm_wavefront'
-    # os.mkdir(path)
-    np.save(path + '/img', img)
-
+    "plots & saves"
+    # np.save(path + '/img', img)
     saVe_plo = True
 
     figu = plt.figure()
@@ -889,8 +883,6 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     np.save(path + '//dphi', dphi)
     np.save(path + '//dphi_uw', dphi_uw)
     np.save(path + '//dphi_err', dphi_err)
-    # np.save(path + '//cal_pos_x', cal_pos_x)
-    # np.save(path + '//cal_pos_y', cal_pos_y)
     np.save(path + '//dx', dx)
     np.save(path + '//dy', dy)
     np.save(path + '//i_fit', i_fit)
@@ -899,6 +891,8 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     np.save(path + '//t', t)
     np.save(path + '//popt_sv', popt_sv)
     np.save(path + '//perr_sv', perr_sv)
+    # np.save(path + '//cal_pos_x', cal_pos_x)
+    # np.save(path + '//cal_pos_y', cal_pos_y)
 
 
     phErr = plt.figure()
