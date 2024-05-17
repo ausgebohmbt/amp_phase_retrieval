@@ -922,112 +922,112 @@ def way_of_the_lens(slm_disp_obj, cam_obj, pms_obj, aperture_number, aperture_wi
     phi_centre = phuzGen.final_phuz
     phi_centre = normalize(phi_centre)*220
 
-    # # "upload phuz 2 slm"
-    # # slm_disp_obj.display(phi_centre)
-    # #
-    # # figph = plt.figure()
-    # # plt.imshow(phi_centre, cmap='inferno')
-    # # plt.colorbar()
-    # # plt.title("phi_centre")
-    # # # plt.show()
-    # # plt.show(block=False)
-    # # plt.pause(1)
-    # # plt.close(figph)
-    # #
-    # #
-    # # "open shutter"
-    # # sh.shutter_state()
-    # # time.sleep(0.1)
-    # # if sh.shut_state == 0:
-    # #     sh.shutter_enable()
-    # # time.sleep(0.4)
-    # # sh.shutter_state()
-    # #
-    # # # Take camera image
-    # # cam_obj.prep_acq()
-    # # cam_obj.take_image()
-    # # imgzaz = cam_obj.last_frame
-    # #
-    # # plo_che = True
-    # # if plo_che:
-    # #     fig = plt.figure()
-    # #     # plt.imshow(imgzaz, cmap='inferno')
-    # #     plt.imshow(imgzaz, cmap='inferno', vmax=5000)
-    # #     plt.colorbar()
-    # #     plt.title("full IMG")
-    # #     # plt.show()
-    # #     plt.show(block=False)
-    # #     plt.pause(1)
-    # #     plt.close(fig)
-    # #
-    # #     " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
-    # #     " set roi or else "
-    # #     " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
-    # #
-    # #     # cam_roi_pos = [1080, 1230]  # grat 10 [1230:1530, 1080:1380]
-    # #     # # cam_roi_pos = [874, 874]  # grat 10 [1230:1530, 1080:1380]
-    # #     # cam_roi_sz = [300, 300]  # grat 10
-    # #     # cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
-    # #     #                     int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
-    # #
-    # #     cam_obj.stop_acq()
-    # #     cam_obj.exposure = 0.1/1000
-    # #     cam_obj.prep_acq()
-    # #     cam_obj.take_image()
-    # #     imgzaz = cam_obj.last_frame
-    # #     cam_obj.exposure = exp_time
-    # #
-    # #     plo_che = True
-    # #     if plo_che:
-    # #         fig = plt.figure()
-    # #         # plt.imshow(imgzaz, cmap='inferno', vmax=1500)  # grat 10
-    # #         plt.imshow(imgzaz[1156:1456, 1170:1470], cmap='inferno', vmax=500)  # grat 10
-    # #         plt.colorbar()
-    # #         plt.title("ROi IMG")
-    # #         # plt.show()
-    # #         plt.show(block=False)
-    # #         plt.pause(0.8)
-    # #         plt.close(fig)
-    # #
-    # #     print(Fore.LIGHTGREEN_EX + "record background" + Style.RESET_ALL)
-    # #
-    # #     "close shutter"
-    # #     sh.shutter_state()
-    # #     time.sleep(0.4)
-    # #     if sh.shut_state == 1:
-    # #         sh.shutter_enable()
-    # #     time.sleep(0.4)
-    # #     sh.shutter_state()
-    # #
-    # #     frame_num = 1
-    # #     cam_obj.stop_acq()
-    # #
-    # #     # cam_obj.prep_acq()
-    # #     cam_obj.take_average_image(frame_num)
-    # #     cam_obj.bckgr = copy.deepcopy(cam_obj.last_frame)
-    # #     bckgr = copy.deepcopy(cam_obj.bckgr)
-    # #
-    # #     if plo_che:
-    # #         fig = plt.figure()
-    # #         plt.imshow(bckgr, cmap='inferno', vmax=150)
-    # #         # plt.imshow(bckgr[1230:1530, 1080:1380], cmap='inferno', vmax=150)
-    # #         plt.colorbar()
-    # #         plt.title('backg')
-    # #         # plt.show()
-    # #         plt.show(block=False)
-    # #         plt.pause(1)
-    # #         plt.close(fig)
-    # #
-    # #     "open shutter"
-    # #     sh.shutter_state()
-    # #     time.sleep(0.1)
-    # #     if sh.shut_state == 0:
-    # #         sh.shutter_enable()
-    # #     time.sleep(0.4)
-    # #     sh.shutter_state()
-    #
-    #     # img = np.zeros((300, 300, aperture_number ** 2))
-    #     img = np.zeros((bckgr.shape[0], bckgr.shape[1], aperture_number ** 2))
+    "upload phuz 2 slm"
+    slm_disp_obj.display(phi_centre)
+
+    figph = plt.figure()
+    plt.imshow(phi_centre, cmap='inferno')
+    plt.colorbar()
+    plt.title("phi_centre")
+    # plt.show()
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close(figph)
+
+
+    "open shutter"
+    sh.shutter_state()
+    time.sleep(0.1)
+    if sh.shut_state == 0:
+        sh.shutter_enable()
+    time.sleep(0.4)
+    sh.shutter_state()
+
+    # Take camera image
+    cam_obj.prep_acq()
+    cam_obj.take_image()
+    imgzaz = cam_obj.last_frame
+
+    plo_che = True
+    if plo_che:
+        fig = plt.figure()
+        # plt.imshow(imgzaz, cmap='inferno')
+        plt.imshow(imgzaz, cmap='inferno', vmax=5000)
+        plt.colorbar()
+        plt.title("full IMG")
+        # plt.show()
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close(fig)
+
+        " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+        " set roi or else "
+        " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+
+        # cam_roi_pos = [1080, 1230]  # grat 10 [1230:1530, 1080:1380]
+        # # cam_roi_pos = [874, 874]  # grat 10 [1230:1530, 1080:1380]
+        # cam_roi_sz = [300, 300]  # grat 10
+        # cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
+        #                     int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
+
+        cam_obj.stop_acq()
+        cam_obj.exposure = 0.1/1000
+        cam_obj.prep_acq()
+        cam_obj.take_image()
+        imgzaz = cam_obj.last_frame
+        cam_obj.exposure = exp_time
+
+        plo_che = True
+        if plo_che:
+            fig = plt.figure()
+            # plt.imshow(imgzaz, cmap='inferno', vmax=1500)  # grat 10
+            plt.imshow(imgzaz[1156:1456, 1170:1470], cmap='inferno', vmax=500)  # grat 10
+            plt.colorbar()
+            plt.title("ROi IMG")
+            # plt.show()
+            plt.show(block=False)
+            plt.pause(0.8)
+            plt.close(fig)
+
+        print(Fore.LIGHTGREEN_EX + "record background" + Style.RESET_ALL)
+
+        "close shutter"
+        sh.shutter_state()
+        time.sleep(0.4)
+        if sh.shut_state == 1:
+            sh.shutter_enable()
+        time.sleep(0.4)
+        sh.shutter_state()
+
+        frame_num = 1
+        cam_obj.stop_acq()
+
+        # cam_obj.prep_acq()
+        cam_obj.take_average_image(frame_num)
+        cam_obj.bckgr = copy.deepcopy(cam_obj.last_frame)
+        bckgr = copy.deepcopy(cam_obj.bckgr)
+
+        if plo_che:
+            fig = plt.figure()
+            plt.imshow(bckgr, cmap='inferno', vmax=150)
+            # plt.imshow(bckgr[1230:1530, 1080:1380], cmap='inferno', vmax=150)
+            plt.colorbar()
+            plt.title('backg')
+            # plt.show()
+            plt.show(block=False)
+            plt.pause(1)
+            plt.close(fig)
+
+        "open shutter"
+        sh.shutter_state()
+        time.sleep(0.1)
+        if sh.shut_state == 0:
+            sh.shutter_enable()
+        time.sleep(0.4)
+        sh.shutter_state()
+
+        # img = np.zeros((300, 300, aperture_number ** 2))
+        img = np.zeros((bckgr.shape[0], bckgr.shape[1], aperture_number ** 2))
 
     # img = np.zeros((roi[1], roi[0], aperture_number ** 2))
     aperture_power = np.zeros(aperture_number ** 2)
@@ -1061,7 +1061,7 @@ def way_of_the_lens(slm_disp_obj, cam_obj, pms_obj, aperture_number, aperture_wi
     y = np.arange(0, slm_phase.shape[0])
     cx = (slm_phase.shape[1] // 2) - 6
     cy = (slm_phase.shape[0] // 2) - 7
-    arrz = []
+    arrz = None
 
     # many_iter = len(dem_vz) + 1
     many_iter = 1
@@ -1107,70 +1107,101 @@ def way_of_the_lens(slm_disp_obj, cam_obj, pms_obj, aperture_number, aperture_wi
                         a_ha_aa = 0
                         # print('something wicked be happenin {}, aha_a_a {}, a_ha_a_a {}'.format(j, aha_aa, a_ha_aa))
 
-            for k in range(0, 12, 2):
-                print(k)
-                arr = np.zeros((y.size, x.size))
-                if k == 0:
-                    r = 47
-                else:
-                    r = 47*k  # 47 leaves center
+        for k in range(0, 13, 2):
+            print(k)
+            arr = np.zeros((y.size, x.size))
+            if k == 0:
+                r = 9
+                # r = 47  # 47 to erase
+            else:
+                r = 47*k  # 47 leaves center
 
-                # The two lines below could be merged, but I stored the mask
-                # for code clarity.
-                mask = (x[np.newaxis, :] - cx) ** 2 + (y[:, np.newaxis] - cy) ** 2 < r ** 2
-                arr[mask] = 1
-                if k == 0:
-                    r = 9
-                else:
-                    r = 9*3*(k + k//1.5)  # 9 leaves center
+            # The two lines below could be merged, but I stored the mask
+            # for code clarity.
+            mask = (x[np.newaxis, :] - cx) ** 2 + (y[:, np.newaxis] - cy) ** 2 < r ** 2
+            if k == 0:
+                arr[mask] = 1  # 1 to erase
+            else:
+                arr[mask] = 0  # 1 to erase
+            if k == 0:
+                # r = 9  # 9 to erase
+                mask2 = mask
+            else:
+                r = 9*3*(k + k//1.5)  # 1.5 & 2 are ok-ish
                 mask2 = (x[np.newaxis, :] - cx) ** 2 + (y[:, np.newaxis] - cy) ** 2 < r ** 2
-                arr[mask2] = 0
+            if not k == 0:
+                arr[mask2] = 1  # 0 to erase
+                mask[mask2] = 0  # 0 to erase
 
-                trypio = masked_phase
-                mask[mask2] = 0
-                trypio[mask] = 0
+            # trypio = masked_phase  # use as mask to erase from
+            trypio = np.zeros((slm_phase.shape[0], slm_phase.shape[1]))
+            trypa = trypio
+            trypio[mask] = 1  # 0 to erase
+            trypio = trypio*slm_phase
+            if arrz is None:
+                arrz = trypio
+            else:
+                arrz = arrz + trypio
 
-                figRIng = plt.figure()
-                plt.subplot(121), plt.imshow(trypio, cmap='inferno')
+            # figRIng = plt.figure()
+            # plt.subplot(221), plt.imshow(trypio, cmap='inferno')
+            # plt.colorbar(fraction=0.046, pad=0.04)
+            # plt.title('k: {}'.format(k))
+            # plt.subplot(222), plt.imshow(arr, cmap='inferno')
+            # plt.colorbar(fraction=0.046, pad=0.04)
+            # plt.title('circle is')
+            # plt.subplot(223), plt.imshow(slm_phase, cmap='inferno')
+            # plt.colorbar(fraction=0.046, pad=0.04)
+            # plt.title('slm_phase')
+            # plt.subplot(224), plt.imshow(mask, cmap='inferno')
+            # plt.colorbar(fraction=0.046, pad=0.04)
+            # plt.title('maskito')
+            # plt.show()
+            # plt.show(block=False)
+            # plt.pause(0.8)
+            # plt.close(figRIng)
+
+            if not k == 12:
+                slm_disp_obj.display(trypio)
+            else:
+                trypa = arrz
+                slm_disp_obj.display(trypa)
+            cam_obj.take_average_image(frame_num)
+            img[..., i] = cam_obj.last_frame - bckgr
+
+            # aperture_power[i] = np.sum(img[..., i]) / (np.size(img[..., i]) * exp_time)
+            aperture_power[i] = 1
+            print(aperture_power[i])
+
+            if plot_within:
+                fig = plt.figure()
+                if not k == 12:
+                    plt.subplot(221), plt.imshow(trypio, cmap='inferno')
+                else:
+                    plt.subplot(221), plt.imshow(trypa, cmap='inferno')
                 plt.colorbar(fraction=0.046, pad=0.04)
-                plt.title('k: {}'.format(k))
-                plt.subplot(122), plt.imshow(arr, cmap='inferno')
+                plt.title('slm_phase')
+                plt.subplot(222), plt.imshow(img[..., i][1156:1456, 1170:1470], cmap='inferno', vmin=0, vmax=20)
                 plt.colorbar(fraction=0.046, pad=0.04)
                 plt.title('ROI IS')
+                plt.subplot(223), plt.imshow(img[..., i], cmap='inferno', vmin=0, vmax=20)
+                plt.colorbar(fraction=0.046, pad=0.04)
+                plt.title("full img")
+                plt.subplot(224), plt.imshow(arr, cmap='inferno')
+                plt.colorbar(fraction=0.046, pad=0.04)
+                plt.title('circle')
+                # plt.show()
                 plt.show(block=False)
+                fig.savefig(path + '\\iter_{}'.format(k) + '_full.png', dpi=300, bbox_inches='tight',
+                            transparent=False)  # True trns worls nice for dispersion thinks I
                 plt.pause(0.8)
-                plt.close(figRIng)
+                plt.close(fig)
 
-        # slm_disp_obj.display(masked_phase)
-        # cam_obj.take_average_image(frame_num)
-        # img[..., i] = cam_obj.last_frame - bckgr
-
-        # aperture_power[i] = np.sum(img[..., i]) / (np.size(img[..., i]) * exp_time)
-        aperture_power[i] = 1
-        print(aperture_power[i])
-
-        if plot_within:
-            fig = plt.figure()
-            plt.subplot(221), plt.imshow(masked_phase, cmap='inferno')
-            plt.colorbar(fraction=0.046, pad=0.04)
-            plt.title('aperture_power[i]: {}'.format(aperture_power[i]))
-            # plt.subplot(222), plt.imshow(img[..., i][1156:1456, 1170:1470], cmap='inferno', vmin=0, vmax=200)
-            # plt.colorbar(fraction=0.046, pad=0.04)
-            # plt.title('ROI IS')
-            plt.subplot(223), plt.imshow(trypio, cmap='inferno')
-            plt.colorbar(fraction=0.046, pad=0.04)
-            plt.title("img full")
-            plt.subplot(224), plt.imshow(arr, cmap='inferno')
-            plt.colorbar(fraction=0.046, pad=0.04)
-            plt.title('ROI IS')
-            plt.show()
-            # plt.show(block=False)
-            # fig.savefig(path + '\\iter_{}'.format(i) + '_full.png', dpi=300, bbox_inches='tight',
-            #             transparent=False)  # True trns worls nice for dispersion thinks I
-            # plt.pause(0.8)
-            # plt.close(fig)
-
-            # np.save(path + '\\iter_{}'.format(i) + '_full_11', img[..., i])
+                np.save(path + '\\iter_{}'.format(k) + '_full_11', img)
+                if not k == 12:
+                    np.save(path + '\\iter_{}'.format(k) + '_phuzz', trypio)
+                else:
+                    np.save(path + '\\iter_{}'.format(k) + '_phuzz', trypa)
 
         dt[i] = time.time() - t_start
         print("time of iter: {}".format(dt[i]))
