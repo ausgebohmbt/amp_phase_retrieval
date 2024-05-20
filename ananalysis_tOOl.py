@@ -1,14 +1,6 @@
 """
-Feedback algorithm example
+Script to  visualise and analyze the results of the Feedback Algorithm Example
 ==========================
-
-This script calculates phase patterns for a phase-modulating liquid crystal on silicon (LCOS) spatial light modulator
-(SLM) to create accurate light potentials by modelling pixel crosstalk on the SLM and using conjugate gradient (CG)
-minimisation with camera feedback (see https://doi.org/10.1038/s41598-023-30296-6).
-
-Using this script, it should be easy to switch between the different patterns from our publication, turn on pixel
-crosstalk modelling and switch between the fast Fourier transform (FFT) and the angular spectrum method (ASM) to model
-the propagation of light.
 """
 
 import numpy as np
@@ -33,10 +25,16 @@ cam_obj = None
 exp = 100
 cam_roi_sz = [300, 300]
 fl = pms_obj.fl
+aperture_width_intense = 32
+slm_pitch = 12.5e-6
+slm_res = np.asarray([1272, 1024], dtype=float)
+slm_size = slm_res * slm_pitch   # x, y dimensions of the SLM [m]
+print(slm_size)
+
 fit_sine = ft.FitSine(fl, pms_obj.k)
 
-plots_o_intensity = False
-plots_o_phase = True
+plots_o_intensity = True
+plots_o_phase = False
 saVe_plo = False
 
 path_intense = ("E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\"
@@ -55,24 +53,60 @@ if plots_o_intensity:
     popt_slm = np.load(path_intense + "popt_slm.npy")
     aperture_power = np.load(path_intense + "aperture_power.npy")
 
-    loPhuz = plt.figure()
+    # Plotting Prep
+    extent_slm = (slm_size[0] + aperture_width_intense * slm_pitch) / 2
+    extent_slm_mm = extent_slm * 1e3
+    extent = [-extent_slm_mm, extent_slm_mm, -extent_slm_mm, extent_slm_mm]
+
+    fINTg = plt.figure()
     plt.subplot(121), plt.imshow(i_rec, cmap='turbo')
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.title('i_rec')
+    plt.xlabel("x pixels")
+    plt.ylabel("y pixels")
     plt.subplot(122), plt.imshow(i_fit_slm, cmap='turbo')
     plt.colorbar(fraction=0.046, pad=0.04)
-    plt.title('i_rec')
+    plt.title('i_fit_slm')
+    plt.xlabel("x pixels")
+    plt.ylabel("y pixels")
+    plt.tight_layout()  # plt.tight_layout(pad=5.0)
     if saVe_plo:
         plt.show(block=False)
         # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
-        loPhuz.savefig(path_intense[:-9] + '\\int.png', dpi=300, bbox_inches='tight',
+        fINTg.savefig(path_intense[:-9] + '\\int.png', dpi=300, bbox_inches='tight',
                        transparent=False)  # True trns worls nice for dispersion thinks I
         plt.pause(0.8)
-        plt.close()
+        plt.close(fINTg)
     else:
-        plt.show(block=False)
+        plt.show()
+        # plt.show(block=False)
         plt.pause(0.8)
-        plt.close()
+        plt.close(fINTg)
+
+    fINTgNorm = plt.figure()
+    plt.subplot(121), plt.imshow(i_rec / np.max(i_rec), cmap='turbo', extent=extent)
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.title('Intensity at SLM Aperture')
+    plt.xlabel("x [mm]")
+    plt.ylabel("y [mm]")
+    plt.subplot(122), plt.imshow(i_fit_slm, cmap='turbo', extent=extent)
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.title('Fitted Gaussian')
+    plt.xlabel("x [mm]")
+    plt.ylabel("y [mm]")
+    plt.tight_layout()  # plt.tight_layout(pad=5.0)
+    if saVe_plo:
+        plt.show(block=False)
+        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+        fINTgNorm.savefig(path_intense[:-9] + '\\intNorm.png', dpi=300, bbox_inches='tight',
+                       transparent=False)  # True trns worls nice for dispersion thinks I
+        plt.pause(0.8)
+        plt.close(fINTgNorm)
+    else:
+        plt.show()
+        # plt.show(block=False)
+        plt.pause(0.8)
+        plt.close(fINTgNorm)
 
 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 " Phase Plots ~~~~~ Phase Plots ~~~~~ Phase Plots ~~~~~ Phase Wha?? ~~~~~"
@@ -126,7 +160,6 @@ if plots_o_phase:
     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     " ~~ dphi_n_err ~~~ dphi_n_err ~~~~~~ dphi_n_err ~~~~~~"
     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-
     fig = plt.figure()
     plt.subplot(121), plt.imshow(dphi, cmap='inferno')
     plt.colorbar(fraction=0.046, pad=0.04)
