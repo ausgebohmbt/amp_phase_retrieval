@@ -5,6 +5,7 @@ Script to  visualise and analyze the results of the Feedback Algorithm Example
 
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 # from matplotlib import cm
 # from colorama import Fore, Style  # , Back
 
@@ -29,19 +30,24 @@ aperture_width_intense = 32
 slm_pitch = 12.5e-6
 slm_res = np.asarray([1272, 1024], dtype=float)
 slm_size = slm_res * slm_pitch   # x, y dimensions of the SLM [m]
-print(slm_size)
 
 fit_sine = ft.FitSine(fl, pms_obj.k)
 
 plots_o_intensity = True
-plots_o_phase = False
-saVe_plo = False
+plots_o_phase = True
+saVe_plo = True
 
 path_intense = ("E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\"
                 "amphase_result\\24-05-15_14-22-49_measure_slm_intensity\\")
 
 path_phase = ("E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\"
               "amphase_result\\24-05-15_14-41-15_measure_slm_wavefront\\")
+
+# # LG data
+# path_intense = ("E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\"
+#                 "amphase_result\\24-05-10_22-04-36_measure_slm_intensity\\")
+# path_phase = ("E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\"
+#               "amphase_result\\24-05-11_00-13-42_measure_slm_wavefront\\")
 
 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 " Intensity Plots ~~~~~ Intensity Plots ~~~~~ Intensity Plots ~~~~~ Intense ~"
@@ -58,6 +64,7 @@ if plots_o_intensity:
     extent_slm_mm = extent_slm * 1e3
     extent = [-extent_slm_mm, extent_slm_mm, -extent_slm_mm, extent_slm_mm]
 
+    " Intensity Plot & fit ~"
     fINTg = plt.figure()
     plt.subplot(121), plt.imshow(i_rec, cmap='turbo')
     plt.colorbar(fraction=0.046, pad=0.04)
@@ -71,18 +78,20 @@ if plots_o_intensity:
     plt.ylabel("y pixels")
     plt.tight_layout()  # plt.tight_layout(pad=5.0)
     if saVe_plo:
+        path = path_intense + "\\analysis"
+        if not os.path.exists(path):
+            os.mkdir(path)
         plt.show(block=False)
-        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
-        fINTg.savefig(path_intense[:-9] + '\\int.png', dpi=300, bbox_inches='tight',
-                       transparent=False)  # True trns worls nice for dispersion thinks I
+        fINTg.savefig(path + '\\int.png', dpi=300, bbox_inches='tight', transparent=False)
         plt.pause(0.8)
         plt.close(fINTg)
     else:
-        plt.show()
-        # plt.show(block=False)
+        # plt.show()
+        plt.show(block=False)
         plt.pause(0.8)
         plt.close(fINTg)
 
+    " Intensity Plot & fit ~~~~ NormaLised"
     fINTgNorm = plt.figure()
     plt.subplot(121), plt.imshow(i_rec / np.max(i_rec), cmap='turbo', extent=extent)
     plt.colorbar(fraction=0.046, pad=0.04)
@@ -97,14 +106,15 @@ if plots_o_intensity:
     plt.tight_layout()  # plt.tight_layout(pad=5.0)
     if saVe_plo:
         plt.show(block=False)
-        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
-        fINTgNorm.savefig(path_intense[:-9] + '\\intNorm.png', dpi=300, bbox_inches='tight',
-                       transparent=False)  # True trns worls nice for dispersion thinks I
+        path = path_intense + "\\analysis"
+        if not os.path.exists(path):
+            os.mkdir(path)
+        fINTgNorm.savefig(path + '\\intNorm.png', dpi=300, bbox_inches='tight', transparent=False)
         plt.pause(0.8)
         plt.close(fINTgNorm)
     else:
-        plt.show()
-        # plt.show(block=False)
+        # plt.show()
+        plt.show(block=False)
         plt.pause(0.8)
         plt.close(fINTgNorm)
 
@@ -113,159 +123,221 @@ if plots_o_intensity:
 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 if plots_o_phase:
 
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    " ~~ loAD npy arrays ~~ "
     try:
-        img = np.load(path_phase + "img.npy")
+        img = np.load(path_phase + "img.npy")  # ~~
         imgzz = np.load(path_phase + "imgzz.npy")
+        exist_img = True
     except Exception as e:
         print('no img sh__, fu__, stacks')
-    powah = np.load(path_phase + "powah.npy")
-    power = np.load(path_phase + "power.npy")
-    i_fit = np.load(path_phase + "i_fit.npy")
-    i_fit_mask = np.load(path_phase + "i_fit_mask.npy")
-    popt_sv = np.load(path_phase + "popt_sv.npy")
-    perr_sv = np.load(path_phase + "perr_sv.npy")
+        exist_img = False
+    try:
+        aperture_coverage = np.load(path_phase + "aperture_coverage.npy")  # ~~
+        exist_coVer = True
+    except Exception as e:
+        print('no aperture_coverage saved')
+        exist_coVer = False
+    powah = np.load(path_phase + "powah.npy")  # ~~
+    power = np.load(path_phase + "power.npy")  # ~~
+    i_fit = np.load(path_phase + "i_fit.npy")  # ~~
+    i_fit_mask = np.load(path_phase + "i_fit_mask.npy")  # ~~
+    popt_sv = np.load(path_phase + "popt_sv.npy")  # used 2 mk dphi & fit_test
+    # perr_sv = np.load(path_phase + "perr_sv.npy")  # used to mk dphi_err
     dphi_uw_mask = np.load(path_phase + "dphi_uw_mask.npy")
-    dphi_uw = np.load(path_phase + "dphi_uw.npy")
-    dphi_err = np.load(path_phase + "dphi_err.npy")
-    dphi = np.load(path_phase + "dphi.npy")
+    dphi_uw = np.load(path_phase + "dphi_uw.npy")  # ~~
+    dphi_err = np.load(path_phase + "dphi_err.npy")  # ~~
+    dphi = np.load(path_phase + "dphi.npy")  # ~~
     dx = np.load(path_phase + "dx.npy")
     dy = np.load(path_phase + "dy.npy")
     tt = np.load(path_phase + "t.npy")
 
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    "prep/recre'te stuff"
     x, y = pt.make_grid(img[:, :, 0], scale=12.5e-6)
     x_data = np.vstack((x.ravel(), y.ravel()))
     img_size = img.shape[0]
-    # fit_test = np.reshape(fit_sine.fit_sine(x_data, *popt_sv[-1]), (img_size, img_size))
+    fit_sine.set_dx_dy(dx, dy)
+    fit_test = np.reshape(fit_sine.fit_sine(x_data, *popt_sv[-1]), (img_size, img_size))
 
-    fig1 = plt.Figure()
-    plt.subplot(121)
-    plt.imshow(img[:, :, -1], cmap='turbo')
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    " Unwrapped phase & errah ~"
+    fgUnPhi = plt.figure()
+    plt.subplot(131), plt.imshow(dphi_uw / np.pi / 2, cmap='magma')
     plt.colorbar(fraction=0.046, pad=0.04)
-    plt.title("img[:, :, -1]")
-    plt.subplot(122)
-    plt.imshow(i_fit, cmap='turbo')
+    plt.title('Unwrapped measured phase')
+    plt.xlabel("x pixels")
+    plt.ylabel("y pixels")
+    plt.subplot(132), plt.imshow(dphi_uw, cmap='magma')
     plt.colorbar(fraction=0.046, pad=0.04)
-    plt.title("i_fit")
-    if saVe_plo:
-        plt.show(block=False)
-        fig1.savefig(path_phase + 'fit.png', dpi=300, bbox_inches='tight', transparent=False)
-        plt.pause(0.8)
-        plt.close(fig1)
-    else:
-        # plt.show()
-        plt.show(block=False)
-        plt.pause(0.8)
-        plt.close()
-
-    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    " ~~ dphi_n_err ~~~ dphi_n_err ~~~~~~ dphi_n_err ~~~~~~"
-    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    fig = plt.figure()
-    plt.subplot(121), plt.imshow(dphi, cmap='inferno')
-    plt.colorbar(fraction=0.046, pad=0.04)
-    plt.title('dphi')
-    plt.subplot(122), plt.imshow(dphi_err, cmap='inferno')
+    plt.title('Unwrapped measured phase, non_normalised')
+    plt.xlabel("x pixels")
+    plt.ylabel("y pixels")
+    plt.subplot(133), plt.imshow(dphi_err, cmap='magma')
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.title('dphi_err')
+    plt.xlabel("x pixels")
+    plt.ylabel("y pixels")
+    plt.tight_layout()  # plt.tight_layout(pad=5.0)
     if saVe_plo:
+        path = path_phase + "\\analysis"
+        if not os.path.exists(path):
+            os.mkdir(path)
         plt.show(block=False)
-        fig.savefig(path_phase + 'dphi_n_err.png', dpi=300, bbox_inches='tight', transparent=False)
+        fgUnPhi.savefig(path + '\\Unwrapped_dphi_and_err.png', dpi=300, bbox_inches='tight', transparent=False)
         plt.pause(0.8)
-        plt.close(fig)
+        plt.close(fgUnPhi)
     else:
-        # plt.show()
-        plt.show(block=False)
+        plt.show()
+        # plt.show(block=False)
         plt.pause(0.8)
-        plt.close()
+        plt.close(fgUnPhi)
 
-    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-
-    figPow, axs = plt.subplots(1, 2)
-    divider = make_axes_locatable(axs[0])
-    ax_cb = divider.new_horizontal(size="5%", pad=0.05)
-    im = axs[0].imshow(powah, cmap='turbo')
-    # im = axs[0].imshow(i_rec / np.max(i_rec), cmap='turbo', extent=extent)
-    axs[0].set_title('powah', fontname='Cambria')
-    # axs[0].set_xlabel("x [mm]", fontname='Cambria')
-    # axs[0].set_ylabel("y [mm]", fontname='Cambria')
-
-    divider = make_axes_locatable(axs[1])
-    ax_cb = divider.new_horizontal(size="5%", pad=0.05)
-    figPow.add_axes(ax_cb)
-    im = axs[1].imshow(power, cmap='turbo')
-    # im = axs[1].imshow(i_fit_slm / np.max(i_fit_slm), cmap='turbo', extent=extent)
-    axs[1].set_title('power', fontname='Cambria')
-    # axs[1].set_xlabel("x [mm]", fontname='Cambria')
-    # axs[1].set_ylabel("y [mm]", fontname='Cambria')
-    cbar = plt.colorbar(im, cax=ax_cb)
-    cbar.set_label('intensity FIX ME', fontname='Cambria')
-    # plt.show()
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    " ~~ last image & fit_test ~"
+    fgUnPhi = plt.figure()
+    plt.subplot(121), plt.imshow(img[:, :, -1], cmap='magma')
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.title('last image')
+    plt.xlabel("x pixels")
+    plt.ylabel("y pixels")
+    plt.subplot(122), plt.imshow(fit_test, cmap='magma')
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.title('fit_test')
+    plt.xlabel("x pixels")
+    plt.ylabel("y pixels")
+    plt.tight_layout()  # plt.tight_layout(pad=5.0)
     if saVe_plo:
+        path = path_phase + "\\analysis"
+        if not os.path.exists(path):
+            os.mkdir(path)
         plt.show(block=False)
-        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
-        figPow.savefig(path_phase +'\\powaher.png', dpi=300, bbox_inches='tight', transparent=False)
+        fgUnPhi.savefig(path + '\\last_img_n_fit_o_test_o.png', dpi=300, bbox_inches='tight', transparent=False)
         plt.pause(0.8)
-        plt.close(figPow)
+        plt.close(fgUnPhi)
     else:
-        # plt.show()
-        plt.show(block=False)
+        plt.show()
+        # plt.show(block=False)
         plt.pause(0.8)
-        plt.close()
+        plt.close(fgUnPhi)
 
-    # Determine phase
-    dphi_uw_nopad = pt.unwrap_2d(dphi)
-    dphi_uw_notilt = ft.remove_tilt(dphi_uw_nopad)
-
-    # figD = plt.Figure()
-    # plt.subplot(121)
-    # plt.imshow(dphi_uw_nopad, cmap='turbo')
-    # plt.title("dphi_uw_nopad")
-    # plt.colorbar(fraction=0.046, pad=0.04)
-    # plt.subplot(122)
-    # plt.imshow(dphi_uw_notilt, cmap='turbo')
-    # plt.title("dphi_uw_notilt")
-    # plt.colorbar(fraction=0.046, pad=0.04)
-    # if saVe_plo:
-    #     plt.show(block=False)
-    #     # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
-    #     figD.savefig(path_phase +'\\detPhuz.png', dpi=300, bbox_inches='tight', transparent=False)
-    #     plt.pause(2)
-    #     plt.close(figD)
-    # else:
-    #     plt.show()
-
-    figD, axs = plt.subplots(1, 2)
-    divider = make_axes_locatable(axs[0])
-    ax_cb = divider.new_horizontal(size="5%", pad=0.05)
-    im = axs[0].imshow(dphi_uw_nopad, cmap='turbo')
-    # im = axs[0].imshow(i_rec / np.max(i_rec), cmap='turbo', extent=extent)
-    axs[0].set_title('dphi_uw_nopad1', fontname='Cambria')
-    # axs[0].set_xlabel("x [mm]", fontname='Cambria')
-    # axs[0].set_ylabel("y [mm]", fontname='Cambria')
-
-    divider = make_axes_locatable(axs[1])
-    ax_cb = divider.new_horizontal(size="5%", pad=0.05)
-    figD.add_axes(ax_cb)
-    im = axs[1].imshow(dphi_uw_notilt, cmap='turbo')
-    # im = axs[1].imshow(i_fit_slm / np.max(i_fit_slm), cmap='turbo', extent=extent)
-    axs[1].set_title('dphi_uw_notilt', fontname='Cambria')
-    # axs[1].set_xlabel("x [mm]", fontname='Cambria')
-    # axs[1].set_ylabel("y [mm]", fontname='Cambria')
-    cbar = plt.colorbar(im, cax=ax_cb)
-    cbar.set_label('intensity FIX ME', fontname='Cambria')
-    # plt.show()
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    " ~~ powah ~~ "
+    fgPow = plt.figure()
+    plt.subplot(121), plt.imshow(powah, cmap='turbo')
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.title('power of central pixel')
+    plt.xlabel("x pixels")
+    plt.ylabel("y pixels")
+    plt.subplot(122), plt.imshow(power, cmap='turbo')
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.title('power around central pixel [3x3]')
+    plt.xlabel("x pixels")
+    plt.ylabel("y pixels")
+    plt.tight_layout()  # plt.tight_layout(pad=5.0)
     if saVe_plo:
+        path = path_phase + "\\analysis"
+        if not os.path.exists(path):
+            os.mkdir(path)
         plt.show(block=False)
-        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
-        figD.savefig(path_phase +'\\detPhuz.png', dpi=300, bbox_inches='tight', transparent=False)
+        fgPow.savefig(path + '\\power.png', dpi=300, bbox_inches='tight', transparent=False)
         plt.pause(0.8)
-        plt.close(figD)
+        plt.close(fgPow)
     else:
-        # plt.show()
-        plt.show(block=False)
+        plt.show()
+        # plt.show(block=False)
         plt.pause(0.8)
-        plt.close()
+        plt.close(fgPow)
+
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    " ~~ mask essentials ~~ "
+    fgMasko = plt.figure()
+    plt.subplot(121), plt.imshow(dphi_uw_mask, cmap='magma')
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.title('dphi_uw_mask')
+    plt.xlabel("x pixels")
+    plt.ylabel("y pixels")
+    plt.subplot(122), plt.imshow(i_fit_mask, cmap='magma')
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.title('i_fit_mask')
+    plt.xlabel("x pixels")
+    plt.ylabel("y pixels")
+    plt.tight_layout()  # plt.tight_layout(pad=5.0)
+    if saVe_plo:
+        path = path_phase + "\\analysis"
+        if not os.path.exists(path):
+            os.mkdir(path)
+        plt.show(block=False)
+        fgMasko.savefig(path + '\\phiMask_n_fit.png', dpi=300, bbox_inches='tight', transparent=False)
+        plt.pause(0.8)
+        plt.close(fgMasko)
+    else:
+        plt.show()
+        # plt.show(block=False)
+        plt.pause(0.8)
+        plt.close(fgMasko)
+
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    " ~~ mask all ~~ "
+    fgMaskAll = plt.figure()
+    plt.subplot(221), plt.imshow(dphi_uw_mask, cmap='magma')
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.title('dphi_uw_mask')
+    plt.xlabel("x pixels")
+    plt.ylabel("y pixels")
+    plt.subplot(222), plt.imshow(i_fit_mask, cmap='magma')
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.title('i_fit_mask')
+    plt.xlabel("x pixels")
+    plt.ylabel("y pixels")
+    plt.subplot(223), plt.imshow(dphi, cmap='magma')
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.title('dphi [unwrapped with i_fit gives _uw_mask]')
+    plt.xlabel("x pixels")
+    plt.ylabel("y pixels")
+    plt.subplot(224), plt.imshow(i_fit, cmap='magma')
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.title('i_fit')
+    plt.xlabel("x pixels")
+    plt.ylabel("y pixels")
+    plt.tight_layout()  # plt.tight_layout(pad=5.0)
+    if saVe_plo:
+        path = path_phase + "\\analysis"
+        if not os.path.exists(path):
+            os.mkdir(path)
+        plt.show(block=False)
+        fgMaskAll.savefig(path + '\\fgMaskAll.png', dpi=300, bbox_inches='tight', transparent=False)
+        plt.pause(0.8)
+        plt.close(fgMaskAll)
+    else:
+        plt.show()
+        # plt.show(block=False)
+        plt.pause(0.8)
+        plt.close(fgMaskAll)
+
+    " ~~~ coVeRaGe ~~~~~~"
+    if exist_coVer:
+        figCoV = plt.figure()
+        plt.imshow(aperture_coverage)
+        plt.title('Coverage of sub-apertures on the SLM')
+        plt.xlabel("x pixels")
+        plt.ylabel("y pixels")
+        if saVe_plo:
+            plt.show(block=False)
+            path = path_phase + "\\analysis"
+            if not os.path.exists(path):
+                os.mkdir(path)
+            figCoV.savefig(path + '\\coVerAge.png', dpi=300, bbox_inches='tight', transparent=False)
+            plt.pause(0.8)
+            plt.close(figCoV)
+        else:
+            plt.show()
+            # plt.show(block=False)
+            plt.pause(0.8)
+            plt.close(figCoV)
+    else:
+        print("no coverage data saved")
+
 
 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 " hOlO testz ~~~~~ hOlO testz ~~~~~ hOlO testz ~~~~~ hOlOw checkz ~~~~~~"

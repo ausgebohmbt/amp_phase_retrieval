@@ -812,9 +812,7 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     plt.title('Coverage of sub-apertures on the SLM')
     if saVe_plo:
         plt.show(block=False)
-        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
-        figu.savefig(path +'\\Coverage.png', dpi=300, bbox_inches='tight',
-                    transparent=False)  # True trns worls nice for dispersion thinks I
+        figu.savefig(path +'\\Coverage.png', dpi=300, bbox_inches='tight', transparent=False)
         plt.pause(0.8)
         plt.close()
     else:
@@ -891,7 +889,7 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     np.save(path + '//t', t)
     np.save(path + '//popt_sv', popt_sv)
     np.save(path + '//perr_sv', perr_sv)
-    # np.save(path + '//cal_pos_x', cal_pos_x)
+    np.save(path + '//aperture_coverage', aperture_coverage)
     # np.save(path + '//cal_pos_y', cal_pos_y)
 
 
@@ -917,8 +915,7 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     if saVe_plo:
         plt.show(block=False)
         # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
-        phFig.savefig(path +'\\Unwrapped.png', dpi=300, bbox_inches='tight',
-                    transparent=False)  # True trns worls nice for dispersion thinks I
+        phFig.savefig(path +'\\Unwrapped.png', dpi=300, bbox_inches='tight', transparent=False)
         plt.pause(0.8)
         plt.close(phFig)
     else:
@@ -937,8 +934,7 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     if saVe_plo:
         plt.show(block=False)
         # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
-        fig1.savefig(path + '\\fit.png', dpi=300, bbox_inches='tight',
-                    transparent=False)  # True trns worls nice for dispersion thinks I
+        fig1.savefig(path + '\\fit.png', dpi=300, bbox_inches='tight', transparent=False)
         plt.pause(2)
         plt.close(fig1)
     else:
@@ -960,8 +956,7 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     if saVe_plo:
         plt.show(block=False)
         # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
-        figPow.savefig(path +'\\powaher.png', dpi=300, bbox_inches='tight',
-                    transparent=False)  # True trns worls nice for dispersion thinks I
+        figPow.savefig(path +'\\powaher.png', dpi=300, bbox_inches='tight', transparent=False)
         plt.pause(2)
         plt.close(figPow)
     else:
