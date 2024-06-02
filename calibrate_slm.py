@@ -246,24 +246,24 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     cam_obj.take_image()
     imgzaz = cam_obj.last_frame
 
-    plo_che = False
+    plo_che = True
     if plo_che:
         fig = plt.figure()
         # plt.imshow(imgzaz, cmap='inferno')
         plt.imshow(imgzaz, cmap='inferno', vmax=5000)
         plt.colorbar()
         plt.title("full IMG")
-        # plt.show()
-        plt.show(block=False)
-        plt.pause(1)
-        plt.close(fig)
+        plt.show()
+        # plt.show(block=False)
+        # plt.pause(1)
+        # plt.close(fig)
 
     " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
     " set roi or else "
     " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
-    cam_roi_pos = [1080, 1230]  # grat 10 [1230:1530, 1080:1380]
-    # cam_roi_pos = [874, 874]  # grat 10 [1230:1530, 1080:1380]
+    # cam_roi_pos = [1080, 1230]  # grat 10 [1230:1530, 1080:1380]
+    cam_roi_pos = [874, 874]  # grat 10 [1230:1530, 1080:1380]
     cam_roi_sz = [300, 300]  # grat 10
     cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
                         int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
@@ -290,10 +290,10 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=65000)  # grat 10
         plt.colorbar()
         plt.title("ROi IMG, gaussian center x0 {}, y0 {}".format(calib_pos_x, calib_pos_y))
-        # plt.show()
-        plt.show(block=False)
-        plt.pause(1)
-        plt.close(fig)
+        plt.show()
+        # plt.show(block=False)
+        # plt.pause(1)
+        # plt.close(fig)
 
     print(Fore.LIGHTGREEN_EX + "record background" + Style.RESET_ALL)
     # todo: need upload the proper phase for background acquisition, or wait a while for the camera to cool down
@@ -390,6 +390,8 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
         aperture_power[i] = np.sum(img[..., i]) / (np.size(img[..., i]) * exp_time)
         print(aperture_power[i])
+
+        # np.save(path + '\\imgF_iter_{}'.format(i), imgF)
 
         if plot_within:
             fig = plt.figure()
@@ -618,8 +620,8 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     laser_intensity_upscaled = np.pad(laser_intensity_upscaled, ((0, 0), (border_x, border_x)))
 
     "roi"
-    cam_roi_pos = [1080, 1230]  # grat 10 [1230:1530, 1080:1380]
-    # cam_roi_pos = [874, 874]  # grat 10 [1230:1530, 1080:1380]
+    # cam_roi_pos = [1080, 1230]  # grat 10 [1230:1530, 1080:1380]
+    cam_roi_pos = [874, 874]  # grat 10 [1230:1530, 1080:1380]
     cam_roi_sz = [300, 300]  # grat 10
     cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
                         int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
@@ -770,9 +772,12 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         aperture_powah[i] = img[..., i][143, 153]
         print("pxl_power[i]: {}".format(aperture_powah[i]))
 
+        np.save(path + '\\imgF_iter_{}'.format(i), img[:, :, i])
+        np.save(path + '\\masked_phase_iter_{}'.format(i), masked_phase)
+
         if plot_within:
             fig = plt.figure()
-            plt.subplot(131), plt.imshow(img_avg, cmap='inferno', vmin=0, vmax=400)
+            plt.subplot(131), plt.imshow(img_avg, cmap='inferno', vmin=0, vmax=40)
             plt.colorbar(fraction=0.046, pad=0.04)
             plt.title('max V: {}'.format(np.amax(img_avg)))
             plt.subplot(132), plt.imshow(masked_phase, cmap='inferno')
@@ -788,7 +793,9 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
                         transparent=False)  # True trns worls nice for dispersion thinks I
             # Save data
             # np.save(path + '\\imgF_iter_{}'.format(i), imgF)
-            # plt.pause(0.7)
+            # np.save(path + '\\imgF_iter_{}'.format(i), img[:, :, i])
+            # np.save(path + '\\masked_phase_iter_{}'.format(i), masked_phase)
+            plt.pause(0.4)
             plt.close(fig)
 
         dt.append(time.time() - t_start)
