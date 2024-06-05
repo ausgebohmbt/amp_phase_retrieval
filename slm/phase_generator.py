@@ -210,8 +210,8 @@ class PhaseGen:
         if div_x < 0:
             print("grating divisions number is negative, only positive values are supported\r\n")
 
-        agrr_x = grr[:self.slmY, :self.slmX]
-        grat = np.fliplr(agrr_x)
+        grat = grr[:self.slmY, :self.slmX]
+        # grat = np.fliplr(agrr_x)
         self.grat = grat
         self._make_full_slm_array()
 
@@ -243,6 +243,7 @@ class PhaseGen:
         # mOD = unimOD(combined)
         # pha_ce = center_overlay(self.slmX, self.slmY, mOD)
         # print(self.whichphuzzez)
+
         # plt.subplot(121), plt.imshow(crxn_pat, cmap='inferno')
         # plt.colorbar()
         # plt.title("crxn_pat")

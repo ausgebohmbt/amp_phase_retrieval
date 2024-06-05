@@ -214,11 +214,11 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     # phuzGen.diviX = 10
     # phuzGen.diviY = 10
     phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
-    # phuzGen.linear_grating()
-    phuzGen.grat = slm_phaseNOR
+    phuzGen.linear_grating()
+    # phuzGen.grat = slm_phaseNOR
     phuzGen._make_full_slm_array()
     phi_centre = phuzGen.final_phuz
-    phi_centre = normalize(phi_centre)*220
+    # phi_centre = normalize(phi_centre)*220
 
     "upload phuz 2 slm"
     slm_disp_obj.display(phi_centre)
@@ -227,10 +227,10 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     plt.imshow(phi_centre, cmap='inferno')
     plt.colorbar()
     plt.title("phi_centre")
-    # plt.show()
-    plt.show(block=False)
-    plt.pause(1)
-    plt.close(figph)
+    plt.show()
+    # plt.show(block=False)
+    # plt.pause(1)
+    # plt.close(figph)
 
 
     "open shutter"
@@ -566,8 +566,8 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     # plt.show()
 
     phuzGen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True}
-    # phuzGen.linear_grating()
-    phuzGen.grat = slm_phaseNOR
+    phuzGen.linear_grating()
+    # phuzGen.grat = slm_phaseNOR
     phuzGen._make_full_slm_array()
     slm_phase = phuzGen.final_phuz
     # phi_centre = normalize(phi_centre)*220

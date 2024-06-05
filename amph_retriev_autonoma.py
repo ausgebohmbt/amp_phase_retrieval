@@ -82,45 +82,12 @@ if measure_slm_phase is True:
     #                                      roi_min_y=2, roi_n=26)
     cam_obj.exposure
     phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 30, 16,
-                                         64, exp/1000, 256, n_avg_frames=10, roi_min_x=0,
+                                         64, exp/1000, 256, n_avg_frames=5, roi_min_x=0,
                                          roi_min_y=0, roi_n=30)
     pms_obj.phi_path = phi_path
 
-
 cam_obj.end()
-
-load_existing = False
-saVe_plo = True
-# this_path = pms_obj.phi_path
-# this_path = pms_obj.i_path
-this_path = "E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\amphase_result\\24-05-10_12-15-14_measure_slm_wavefront\\powah.npy"
-
-if load_existing:
-    loaded_phuz = np.load(this_path)
-
-    loPhuz = plt.figure()
-    plt.imshow(loaded_phuz, cmap='turbo')
-    # plt.imshow(loaded_phuz / np.pi / 2, cmap='magma')
-    plt.colorbar()
-    plt.title('intense')
-    # plt.title('Unwrapped measured phase')
-
-    # fig, axs = plt.subplots(1, 2)
-    # im = axs[0].imshow(i_rec / np.max(i_rec), cmap='turbo', extent=extent)
-    # axs[0].set_title('Intensity at SLM Aperture', fontname='Cambria')
-    # axs[0].set_xlabel("x [mm]", fontname='Cambria')
-    # axs[0].set_ylabel("y [mm]", fontname='Cambria')
-    #
-    # divider = make_axes_locatable(axs[1])
-    # ax_cb = divider.new_horizontal(size="5%", pad=0.05)
-    # fig.add_axes(ax_cb)
-    # im = axs[1].imshow(i_fit_slm / np.max(i_fit_slm), cmap='turbo', extent=extent)
-    # axs[1].set_title('Fitted Gaussian', fontname='Cambria')
-    # axs[1].set_xlabel("x [mm]", fontname='Cambria')
-    # axs[1].set_ylabel("y [mm]", fontname='Cambria')
-    # cbar = plt.colorbar(im, cax=ax_cb)
-    # cbar.set_label('normalised intensity', fontname='Cambria')
-    plt.show()
+cam_obj.hcam.shutdown()
 
 print(Fore.LIGHTBLUE_EX + "jah ha run" + Style.RESET_ALL)
 print('es el finAl')
