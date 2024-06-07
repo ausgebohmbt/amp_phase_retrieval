@@ -227,10 +227,10 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     plt.imshow(phi_centre, cmap='inferno')
     plt.colorbar()
     plt.title("phi_centre")
-    plt.show()
-    # plt.show(block=False)
-    # plt.pause(1)
-    # plt.close(figph)
+    # plt.show()
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close(figph)
 
 
     "open shutter"
@@ -253,10 +253,10 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         plt.imshow(imgzaz, cmap='inferno', vmax=5000)
         plt.colorbar()
         plt.title("full IMG")
-        plt.show()
-        # plt.show(block=False)
-        # plt.pause(1)
-        # plt.close(fig)
+        # plt.show()
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close(fig)
 
     " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
     " set roi or else "
@@ -290,11 +290,11 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=65000)  # grat 10
         plt.colorbar()
         plt.title("ROi IMG, gaussian center x0 {}, y0 {}".format(calib_pos_x, calib_pos_y))
-        plt.show()
-        # plt.show(block=False)
-        # plt.pause(1)
-        # plt.close(fig)
-
+        # plt.show()
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close(fig)
+    #
     print(Fore.LIGHTGREEN_EX + "record background" + Style.RESET_ALL)
     # todo: need upload the proper phase for background acquisition, or wait a while for the camera to cool down
     # fixme: same goes for acquisition of first frame
@@ -422,7 +422,7 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         print("iter {} of {}".format(i, iter_num))
         print("estimated time left approx: {}'".format((numpy.mean(dt)*(iter_num-i)) / 60))
 
-    # np.save(path + '//img', img)
+    np.save(path + '//img', img)
     np.save(path + '//aperture_power', aperture_power)
 
     # Find SLM intensity profile
@@ -772,9 +772,8 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         aperture_powah[i] = img[..., i][143, 153]
         print("pxl_power[i]: {}".format(aperture_powah[i]))
 
-        np.save(path + '\\imgF_iter_{}'.format(i), img[:, :, i])
-        np.save(path + '\\masked_phase_iter_{}'.format(i), masked_phase)
-
+        # np.save(path + '\\imgF_iter_{}'.format(i), img[:, :, i])
+        # np.save(path + '\\masked_phase_iter_{}'.format(i), masked_phase)
         if plot_within:
             fig = plt.figure()
             plt.subplot(131), plt.imshow(img_avg, cmap='inferno', vmin=0, vmax=40)
@@ -811,7 +810,7 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
     "plots & saves"
-    # np.save(path + '/img', img)
+    np.save(path + '/img', img)
     saVe_plo = True
 
     figu = plt.figure()

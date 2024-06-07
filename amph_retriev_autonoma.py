@@ -82,7 +82,7 @@ if measure_slm_phase is True:
     #                                      roi_min_y=2, roi_n=26)
     cam_obj.exposure
     phi_path = clb.measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, 30, 16,
-                                         64, exp/1000, 256, n_avg_frames=5, roi_min_x=0,
+                                         64, exp/1000, 256, n_avg_frames=10, roi_min_x=0,
                                          roi_min_y=0, roi_n=30)
     pms_obj.phi_path = phi_path
 

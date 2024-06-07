@@ -38,10 +38,10 @@ plots_o_phase = True
 saVe_plo = True
 
 path_intense = ("E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\"
-                "amphase_result\\24-05-15_14-22-49_measure_slm_intensity\\")
+                "amphase_result\\24-06-06_12-41-07_measure_slm_intensity\\")
 
 path_phase = ("E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\"
-              "amphase_result\\24-05-15_14-41-15_measure_slm_wavefront\\")
+              "amphase_result\\24-06-06_12-58-20_measure_slm_wavefront\\")
 
 # # LG data
 # path_intense = ("E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\"
@@ -55,7 +55,10 @@ path_phase = ("E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\"
 if plots_o_intensity:
     i_rec = np.load(path_intense + "i_rec.npy")
     i_fit_slm = np.load(path_intense + "i_fit_slm.npy")
-    img = np.load(path_intense + "img.npy")
+    try:
+        img = np.load(path_intense + "img.npy")
+    except Exception as e:
+        print("no img in int folder")
     popt_slm = np.load(path_intense + "popt_slm.npy")
     aperture_power = np.load(path_intense + "aperture_power.npy")
 
@@ -154,11 +157,40 @@ if plots_o_phase:
 
     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     "prep/recre'te stuff"
-    x, y = pt.make_grid(img[:, :, 0], scale=12.5e-6)
-    x_data = np.vstack((x.ravel(), y.ravel()))
-    img_size = img.shape[0]
-    fit_sine.set_dx_dy(dx, dy)
-    fit_test = np.reshape(fit_sine.fit_sine(x_data, *popt_sv[-1]), (img_size, img_size))
+    if exist_img:
+        x, y = pt.make_grid(img[:, :, 0], scale=12.5e-6)
+        x_data = np.vstack((x.ravel(), y.ravel()))
+        img_size = img.shape[0]
+        fit_sine.set_dx_dy(dx, dy)
+        fit_test = np.reshape(fit_sine.fit_sine(x_data, *popt_sv[-1]), (img_size, img_size))
+
+        "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        " ~~ last image & fit_test ~"
+        fgUnPhi = plt.figure()
+        plt.subplot(121), plt.imshow(img[:, :, -1], cmap='magma')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title('last image')
+        plt.xlabel("x pixels")
+        plt.ylabel("y pixels")
+        plt.subplot(122), plt.imshow(fit_test, cmap='magma')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title('fit_test')
+        plt.xlabel("x pixels")
+        plt.ylabel("y pixels")
+        plt.tight_layout()  # plt.tight_layout(pad=5.0)
+        if saVe_plo:
+            path = path_phase + "\\analysis"
+            if not os.path.exists(path):
+                os.mkdir(path)
+            plt.show(block=False)
+            fgUnPhi.savefig(path + '\\last_img_n_fit_o_test_o.png', dpi=300, bbox_inches='tight', transparent=False)
+            plt.pause(0.8)
+            plt.close(fgUnPhi)
+        else:
+            plt.show()
+            # plt.show(block=False)
+            plt.pause(0.8)
+            plt.close(fgUnPhi)
 
     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     " Unwrapped phase & errah ~"
@@ -185,34 +217,6 @@ if plots_o_phase:
             os.mkdir(path)
         plt.show(block=False)
         fgUnPhi.savefig(path + '\\Unwrapped_dphi_and_err.png', dpi=300, bbox_inches='tight', transparent=False)
-        plt.pause(0.8)
-        plt.close(fgUnPhi)
-    else:
-        plt.show()
-        # plt.show(block=False)
-        plt.pause(0.8)
-        plt.close(fgUnPhi)
-
-    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    " ~~ last image & fit_test ~"
-    fgUnPhi = plt.figure()
-    plt.subplot(121), plt.imshow(img[:, :, -1], cmap='magma')
-    plt.colorbar(fraction=0.046, pad=0.04)
-    plt.title('last image')
-    plt.xlabel("x pixels")
-    plt.ylabel("y pixels")
-    plt.subplot(122), plt.imshow(fit_test, cmap='magma')
-    plt.colorbar(fraction=0.046, pad=0.04)
-    plt.title('fit_test')
-    plt.xlabel("x pixels")
-    plt.ylabel("y pixels")
-    plt.tight_layout()  # plt.tight_layout(pad=5.0)
-    if saVe_plo:
-        path = path_phase + "\\analysis"
-        if not os.path.exists(path):
-            os.mkdir(path)
-        plt.show(block=False)
-        fgUnPhi.savefig(path + '\\last_img_n_fit_o_test_o.png', dpi=300, bbox_inches='tight', transparent=False)
         plt.pause(0.8)
         plt.close(fgUnPhi)
     else:
@@ -292,7 +296,7 @@ if plots_o_phase:
     plt.ylabel("y pixels")
     plt.subplot(223), plt.imshow(dphi, cmap='magma')
     plt.colorbar(fraction=0.046, pad=0.04)
-    plt.title('dphi [unwrapped with i_fit gives _uw_mask]')
+    plt.title('dphi [when unwrapped with i_fit gives _uw_mask]')
     plt.xlabel("x pixels")
     plt.ylabel("y pixels")
     plt.subplot(224), plt.imshow(i_fit, cmap='magma')
