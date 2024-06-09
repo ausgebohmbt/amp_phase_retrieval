@@ -36,7 +36,7 @@ class Params(hw.ParamsBase):
     # todo: these the saved ones or...??
     phi_path = data_path + '24-05-01_16-06-50_measure_slm_wavefront/dphi_uw.npy'
     # phi_path = data_path + '24-04-30_14-54-25_measure_slm_wavefront/dphi_uw.npy'
-    i_path = data_path + '24-06-07_11-46-50_measure_slm_intensity/i_rec.npy'
+    i_path = data_path + '24-06-09_12-15-07_measure_slm_intensity/i_rec.npy'
 
     phi_filter_size = 2  # todo: what is it?
     crop = 64  # todo: what is it?

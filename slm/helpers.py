@@ -188,4 +188,19 @@ def fit_gaussian(img, dx=None, dy=None, sig_x=15, sig_y=15, a=None, c=0, blur_wi
     perr = np.sqrt(np.diag(pcov))
     return popt, perr
 
+
+def closest(lst, K) -> tuple:
+    """searches list lst for the closest value to K.
+
+     return:
+         tuple with index and closest value existing the list"""
+    return min(enumerate(lst), key=lambda x: abs(x[1]-K))
+
+
+def closest_arr(arr, K) -> tuple:
+    diff = np.absolute(arr - K)
+    index = diff.argmin()
+    return index, arr[index]
+
+
 # es el final
