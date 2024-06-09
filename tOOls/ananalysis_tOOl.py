@@ -36,12 +36,13 @@ fit_sine = ft.FitSine(fl, pms_obj.k)
 plots_o_intensity = False
 plots_o_phase = False
 saVe_plo = False
+tiltin = True
 
 path_intense = ("E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\"
                 "amphase_result\\24-06-07_11-46-50_measure_slm_intensity\\")
 
 path_phase = ("E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\"
-              "amphase_result\\24-06-07_12-08-15_measure_slm_wavefront\\")
+              "amphase_result\\24-06-09_16-25-30_measure_slm_wavefront\\")
 
 # # LG data
 # path_intense = ("E:\\mitsos\\pYthOn\\slm_chronicles\\amphuz_retriev\\"
@@ -346,7 +347,7 @@ if plots_o_phase:
 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 " hOlO testz ~~~~~ hOlO testz ~~~~~ hOlO testz ~~~~~ hOlOw checkz ~~~~~~"
 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-test_phuz = True
+test_phuz = False
 if test_phuz:
     print('san tsouleriko')
     dphi = np.load(path_phase + "dphi.npy")  # ~~
@@ -428,6 +429,123 @@ if test_phuz:
     plt.title("aperitus")
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.show()
+
+
+if tiltin:
+    print('san tsouleriko, o o o o o')
+    dphi = np.load(path_phase + "dphi.npy")  # ~~
+    i_fit_mask = np.load(path_phase + "i_fit_mask.npy")  # ~~
+    roi_min_x = 0
+    roi_min_y = 0
+    roi_n = 30
+    aperture_number = 30
+    # Determine phase
+    dphi_uw_nopad = pt.unwrap_2d(dphi)
+    dphi_uw_notilt = ft.remove_tilt(dphi_uw_nopad)
+    pad_roi = ((roi_min_x, aperture_number - roi_n - roi_min_x), (roi_min_y, aperture_number - roi_n - roi_min_y))
+    dphi_uw = np.pad(dphi_uw_nopad, pad_roi)
+    dphi_uw_mask = pt.unwrap_2d_mask(dphi, i_fit_mask)
+    dphi_uw_mask = np.pad(dphi_uw_mask, pad_roi)
+
+    # # figD = plt.Figure()
+    plt.subplot(231)
+    plt.imshow(dphi, cmap='inferno')
+    plt.title("dphi")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(232)
+    plt.imshow(dphi_uw_nopad, cmap='inferno')
+    plt.title("dphi_uw_nopad")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(233)
+    plt.imshow(dphi_uw_notilt, cmap='inferno')
+    plt.title("dphi_uw_notilt")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(234)
+    plt.imshow(dphi_uw, cmap='inferno')
+    plt.title("dphi_uw")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(235)
+    plt.imshow(dphi_uw_mask, cmap='inferno')
+    plt.title("dphi_uw_mask")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(236)
+    # plt.imshow(resu_norm_mo, cmap='inferno')
+    # plt.title("resu_norm_mo")
+    # plt.colorbar(fraction=0.046, pad=0.04)
+    plt.show()
+
+
+    zator = normalize(dphi_uw_notilt)
+
+    dphi_err = np.load(path_phase + "dphi_err.npy")  # ~~
+    a = (dphi_err.shape[0] // 2)
+    # b=dphi_err[a:a+1, :]
+
+    there_this = closest_arr(dphi_err[a:a+1, :][0], 620000.)
+
+    # plt.imshow(dphi_err[a:a+1, :], cmap='inferno')
+    # plt.colorbar()
+    # plt.title("dphi_err idx, {}".format(there_this))
+    # plt.show()
+
+    missing = np.mean( [zator[a:a+1, there_this[0]-1], zator[a:a+1, there_this[0]+1]])
+    print("l {}, r {}, m {}".format(zator[a:a+1, there_this[0]-1], zator[a:a+1, there_this[0]+1], missing))
+    zator[a:a+1, there_this[0]] = missing
+
+    plt.subplot(121)
+    plt.imshow(dphi, cmap='inferno')
+    plt.colorbar()
+    plt.title("dphi")
+    plt.subplot(122)
+    plt.imshow(zator, cmap='inferno')
+    plt.colorbar()
+    plt.title("zator")
+    plt.show()
+
+    inv_zator = - zator
+    inv_zator_norm = normalize(inv_zator)
+    resu = zator + inv_zator
+    resu_norm = zator + inv_zator_norm
+    resu_norm_mo = unimOD(resu_norm)
+    res_resz = cv2.resize(inv_zator_norm, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
+
+    # figD = plt.Figure()
+    plt.subplot(231)
+    plt.imshow(zator, cmap='inferno')
+    plt.title("zator")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(232)
+    plt.imshow(inv_zator, cmap='inferno')
+    plt.title("inv_zator")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(233)
+    plt.imshow(inv_zator_norm, cmap='inferno')
+    plt.title("inv_zator_norm")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(234)
+    plt.imshow(resu, cmap='inferno')
+    plt.title("resu")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(235)
+    plt.imshow(resu_norm, cmap='inferno')
+    plt.title("resu_norm")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(236)
+    plt.imshow(resu_norm_mo, cmap='inferno')
+    plt.title("resu_norm_mo")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.show()
+
+    plt.subplot(121)
+    plt.imshow(res_resz, cmap='inferno')
+    plt.title("res_resz")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(122)
+    plt.imshow(inv_zator_norm, cmap='inferno')
+    plt.title("inv_zator_norm")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.show()
+
 
 
 
