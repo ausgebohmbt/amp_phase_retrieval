@@ -8,12 +8,13 @@ import matplotlib.pyplot as plt
 import os
 # from matplotlib import cm
 # from colorama import Fore, Style  # , Back
+import cv2
 
 # import measurement_functions as mfunc
 import error_metrics as m, patterns as pt, fitting as ft
 # from mpl_toolkits.axes_grid1 import make_axes_locatable
 # from slm.phase_generator import phagen as phuzGen
-from slm.helpers import normalize, unimOD, closest_arr  # , center_overlay  # , center_crop, tiler,
+from slm.helpers import normalize, unimOD, closest_arr, draw_circle, center_overlay  #   # , center_crop, tiler,
 from experiment import Params  # , Camera, SlmDisp
 
 pms_obj = Params()
@@ -367,6 +368,9 @@ if test_phuz:
     print("l {}, r {}, m {}".format(zator[a:a+1, there_this[0]-1], zator[a:a+1, there_this[0]+1], missing))
     zator[a:a+1, there_this[0]] = missing
 
+    circular_aperture = draw_circle(1024, 500)
+    circular_aperture = center_overlay(1024, 1024, circular_aperture)
+
     plt.subplot(121)
     plt.imshow(dphi, cmap='inferno')
     plt.colorbar()
@@ -382,8 +386,9 @@ if test_phuz:
     resu = zator + inv_zator
     resu_norm = zator + inv_zator_norm
     resu_norm_mo = unimOD(resu_norm)
+    res_resz = cv2.resize(inv_zator_norm, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
 
-    figD = plt.Figure()
+    # figD = plt.Figure()
     plt.subplot(231)
     plt.imshow(zator, cmap='inferno')
     plt.title("zator")
@@ -409,6 +414,21 @@ if test_phuz:
     plt.title("resu_norm_mo")
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.show()
+
+    plt.subplot(131)
+    plt.imshow(res_resz, cmap='inferno')
+    plt.title("res_resz")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(132)
+    plt.imshow(inv_zator_norm, cmap='inferno')
+    plt.title("inv_zator_norm")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(133)
+    plt.imshow(res_resz*circular_aperture, cmap='inferno')
+    plt.title("aperitus")
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.show()
+
 
 
 print('es el finAl')

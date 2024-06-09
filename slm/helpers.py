@@ -203,4 +203,12 @@ def closest_arr(arr, K) -> tuple:
     return index, arr[index]
 
 
+def draw_circle(arraysz, radious):
+    xx, yy = np.mgrid[-radious:radious + 1, -radious:radious + 1]
+    circle = xx ** 2 + yy ** 2 <= radious ** 2
+    # bg = np.zeros((arraysz, arraysz))
+    arrr = center_overlay(arraysz, arraysz, circle.astype(int))
+    return arrr
+
+
 # es el final

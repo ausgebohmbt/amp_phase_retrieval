@@ -35,7 +35,7 @@ class PhaseGen:
         self.state_phase = False
         self.state_amp = False
         self.state_corr = False
-        self.state_lg = False
+        self.state_lg = True
         self.state_cor_phase = False
         self.whichphuzzez = {"grating": self.state_grat, "lens": self.state_lens,
                              "phase": self.state_phase, "amplitude": self.state_amp, "corr_patt": self.state_corr,
@@ -113,6 +113,8 @@ class PhaseGen:
         """load bmp and add to phase"""
         current_path = os.getcwd()
         print(current_path)
+        if "tests" in current_path:
+            current_path = current_path.replace("\\tests", "")
         img_nom = glob.glob(current_path + "\\slm\\corr_patties\\CAL_LSH0803174_750nm.bmp")
         print(img_nom)
         if os.path.exists(img_nom[0]):  # check if pattie exists
@@ -248,6 +250,7 @@ class PhaseGen:
             lg = center_overlay(self.slmX, self.slmY, self.canVas)
         if self.whichphuzzez["corr_phase"]:
             core_phuz = self.crxn_phuz_boom
+            core_phuz = center_overlay(self.slmX, self.slmY, self.crxn_phuz_boom)
         else:
             core_phuz = center_overlay(self.slmX, self.slmY, self.canVas)
 
@@ -429,6 +432,6 @@ class PhaseGen:
 
 phagen = PhaseGen()
 phagen.correction_patt()
-# phagen.laguerre_beam(r0=(0, 0), A=1, order_rdl=0, order_ang=1, z=0.01, z0=0)
+phagen.laguerre_beam(r0=(0, 0), A=1, order_rdl=0, order_ang=1, z=0.01, z0=0)
 
 # es el finAl

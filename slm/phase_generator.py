@@ -109,8 +109,11 @@ class PhaseGen:
         """load bmp and add to phase"""
         current_path = os.getcwd()
         print(current_path)
+        if "tests" in current_path:
+            current_path = current_path.replace("\\tests", "")
         img_nom = glob.glob(current_path + "\\slm\\corr_patties\\CAL_LSH0803174_750nm.bmp")
         print(img_nom)
+
         if os.path.exists(img_nom[0]):  # check if pattie exists
             with Image.open(img_nom[0]) as img:
                 im = np.array(img).astype(np.float32)

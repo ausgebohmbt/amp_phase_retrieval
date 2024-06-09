@@ -52,6 +52,8 @@ class SlmDisplay(SLM_clash):
         super(SlmDisplay, self).__init__(parent)
         """ slm init variables"""
         cur_path = os.getcwd() + r"\slm"
+        if "tests" in cur_path:
+            cur_path = cur_path.replace("\\tests", "")
         SLM_DLL_FOLDER = cur_path + r"\hpkSLMdaLV_stdcall_64bit"
         os.environ['PATH'] = SLM_DLL_FOLDER + os.pathsep + os.environ.get('PATH', '')
         os.add_dll_directory(cur_path + r"\hpkSLMdaLV_stdcall_64bit")
