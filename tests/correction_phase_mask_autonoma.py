@@ -47,6 +47,7 @@ cam_obj.exposure
 measure_slm_intensity = False   # Measure the constant intensity at the SLM (laser beam profile)?
 measure_slm_phase = False       # Measure the constant phase at the SLM?
 correction_section = True
+saVe_plo = True
 
 "Measuring the constant intensity and phase at the SLM"
 if measure_slm_intensity is True:
@@ -145,21 +146,21 @@ if correction_section:
     # plt.show()
 
     "cre'te spiral phase and start testin"
+    phagen.modDepth = 255
     phagen.crxn_phuz_boom = res_resz
     phagen.state_lg  = True
     phagen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True,
                            "lg_pol": True, "corr_phase": False}
     phagen.linear_grating()
-    phagen.modDepth = 255
     phagen._make_full_slm_array()
-    slm_phase = phagen.final_phuz
+    slm_phase_init = phagen.final_phuz
     # plt.imshow(slm_phase, cmap='inferno')
     # plt.title("slm_phase")
     # plt.colorbar(fraction=0.046, pad=0.04)
     # plt.show()
 
     "upload 2 slm"
-    slm_disp_obj.display(slm_phase)
+    slm_disp_obj.display(slm_phase_init)
 
     "roi"
     # cam_roi_pos = [1080, 1230]  # grat 10 [1230:1530, 1080:1380]
@@ -175,70 +176,80 @@ if correction_section:
     cam_obj.take_image()
     imgzaz_init = cam_obj.last_frame
 
-    img_size = imgzaz_init.shape[0]
+    radios = 500
+    circular_aperture = draw_circle(1024, radios)
+    circular_aperture = center_overlay(1272, 1024, circular_aperture)
 
-    plo_che = False
+    slm_phase = slm_phase_init * circular_aperture
+    "upload 2 slm"
+    slm_disp_obj.display(slm_phase)
+
+    cam_obj.prep_acq()
+    cam_obj.take_image()
+    imgzaz = cam_obj.last_frame
+
+    # frame[frame == 0] = 0.001
+    # frame = np.log10(frame)
+
+    plo_che = True
     if plo_che:
         fig = plt.figure()
-        plt.subplot(131)
-        plt.imshow(imgzaz_init, cmap='inferno', vmax=400)
+        plt.subplot(231)
+        plt.imshow(imgzaz_init, cmap='inferno', vmax=42000)
         plt.colorbar(fraction=0.046, pad=0.04)
-        plt.title('full IMG max V: {}'.format(np.amax(imgzaz_init)))
-        plt.subplot(132)
+        plt.title('no aperture:')
+        plt.subplot(232)
+        plt.imshow(np.log10(imgzaz_init), cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title('log no aperture:')
         # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
-        plt.imshow(imgzaz_init, cmap='inferno')
+        plt.subplot(233)
+        plt.imshow(slm_phase_init, cmap='inferno')
         plt.colorbar(fraction=0.046, pad=0.04)
-        plt.title("ROi IMG")
-        plt.subplot(133)
-        plt.imshow(slm_phase, cmap='inferno')
+        plt.title("no aperture")
+        plt.subplot(234)
+        plt.imshow(imgzaz, cmap='inferno', vmax=42000)
         plt.colorbar(fraction=0.046, pad=0.04)
-        plt.title("slm_phase")
-        # plt.show()
-        plt.show(block=False)
-        plt.pause(0.8)
-        plt.close(fig)
+        plt.title("aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(235)
+        plt.imshow(np.log10(imgzaz), cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("log aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(236)
+        plt.imshow(slm_phase * circular_aperture, cmap='inferno')
+        plt.title("not corrected")
+        plt.colorbar(fraction=0.046, pad=0.04)
+        # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
+        if saVe_plo:
+            plt.show(block=False)
+            # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+            fig.savefig(path_phase + '\\not_corrected_aper {}, bitDepth {}.png'.format(radios, phagen.modDepth),
+                          dpi=300, bbox_inches='tight', transparent=False)
+            plt.pause(0.8)
+            plt.close(fig)
+        else:
+            plt.show()
+
 
     "enable corection"
+    radios = 500
+    circular_aperture = draw_circle(1024, radios)
+    circular_aperture = center_overlay(1272, 1024, circular_aperture)
+
+    "upload 2 slm"
+    aperture_init_phase = slm_phase_init * circular_aperture
+    slm_disp_obj.display(aperture_init_phase)
+
+    cam_obj.prep_acq()
+    cam_obj.take_image()
+    imgzaz_init = cam_obj.last_frame
+
+    # correct
     phagen.state_cor_phase = True
     phagen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": False,
                            "lg_pol": True, "corr_phase": True}
     phagen._make_full_slm_array()
     slm_phase = phagen.final_phuz
-    "upload 2 slm"
-    slm_disp_obj.display(slm_phase)
-
-
-
-    cam_obj.prep_acq()
-    cam_obj.take_image()
-    imgzaz = cam_obj.last_frame
-
-    img_size = imgzaz.shape[0]
-
-    che = True
-    if che:
-        fig = plt.figure()
-        plt.subplot(131)
-        plt.imshow(imgzaz_init, cmap='inferno', vmax=30000)
-        plt.colorbar(fraction=0.046, pad=0.04)
-        plt.title('full IMG max V: {}'.format(np.amax(imgzaz)))
-        plt.subplot(132)
-        # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
-        plt.imshow(imgzaz, cmap='inferno', vmax=30000)
-        plt.colorbar(fraction=0.046, pad=0.04)
-        plt.title("ROi IMG")
-        plt.subplot(133)
-        plt.imshow(slm_phase, cmap='inferno')
-        plt.colorbar(fraction=0.046, pad=0.04)
-        plt.title("slm_phase")
-        plt.show()
-        # plt.show(block=False)
-        # plt.pause(1)
-        # plt.close(fig)
-
-    "aperitus maximus"
-    circular_aperture = draw_circle(1024, 300)
-    circular_aperture = center_overlay(1272, 1024, circular_aperture)
 
     slm_phase = phagen.final_phuz * circular_aperture
     "upload 2 slm"
@@ -248,30 +259,57 @@ if correction_section:
     cam_obj.take_image()
     imgzaz = cam_obj.last_frame
 
-    che = True
-    if che:
-        fig = plt.figure()
-        plt.subplot(131)
-        plt.imshow(imgzaz_init, cmap='inferno', vmax=30000)
+    plo_che = True
+    if plo_che:
+        phFig = plt.figure()
+        plt.subplot(231)
+        plt.imshow(imgzaz_init, cmap='inferno', vmax=24000)
         plt.colorbar(fraction=0.046, pad=0.04)
-        plt.title('full IMG max V: {}'.format(np.amax(imgzaz)))
-        plt.subplot(132)
+        plt.title("aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(232)
+        plt.imshow(np.log10(imgzaz_init), cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title('log no correction:')
         # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
-        plt.imshow(imgzaz, cmap='inferno', vmax=30000)
+        plt.subplot(233)
+        plt.imshow(aperture_init_phase, cmap='inferno')
         plt.colorbar(fraction=0.046, pad=0.04)
-        plt.title("ROi IMG")
-        plt.subplot(133)
-        plt.imshow(slm_phase, cmap='inferno')
+        plt.title(" no correction")
+        plt.subplot(234)
+        plt.imshow(imgzaz, cmap='inferno', vmax=24000)
         plt.colorbar(fraction=0.046, pad=0.04)
-        plt.title("slm_phase")
+        plt.title("aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(235)
+        plt.imshow(np.log10(imgzaz), cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("log aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(236)
+        plt.imshow(slm_phase * circular_aperture, cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("corrected")
+        # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
+    if saVe_plo:
+        plt.show(block=False)
+        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+        phFig.savefig(path_phase + '\\corrected_aper {}, bitDepth {}.png'.format(radios, phagen.modDepth),
+                      dpi=300, bbox_inches='tight', transparent=False)
+        plt.pause(0.8)
+        plt.close(phFig)
+    else:
         plt.show()
-        # plt.show(block=False)
-        # plt.pause(1)
-        # plt.close(fig)
 
-    "aperitus maximus"
-    circular_aperture = draw_circle(1024, 200)
+    "enable corection 300"
+    radios = 450
+    circular_aperture = draw_circle(1024, radios)
     circular_aperture = center_overlay(1272, 1024, circular_aperture)
+
+    "upload 2 slm"
+    aperture_init_phase = slm_phase_init * circular_aperture
+    slm_disp_obj.display(aperture_init_phase)
+
+    cam_obj.prep_acq()
+    cam_obj.take_image()
+    imgzaz_init = cam_obj.last_frame
 
     slm_phase = phagen.final_phuz * circular_aperture
     "upload 2 slm"
@@ -281,29 +319,57 @@ if correction_section:
     cam_obj.take_image()
     imgzaz = cam_obj.last_frame
 
-    che = True
-    if che:
-        fig = plt.figure()
-        plt.subplot(131)
-        plt.imshow(imgzaz_init, cmap='inferno', vmax=30000)
+    plo_che = True
+    if plo_che:
+        phFig = plt.figure()
+        plt.subplot(231)
+        plt.imshow(imgzaz_init, cmap='inferno', vmax=24000)
         plt.colorbar(fraction=0.046, pad=0.04)
-        plt.title('full IMG max V: {}'.format(np.amax(imgzaz)))
-        plt.subplot(132)
+        plt.title("aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(232)
+        plt.imshow(np.log10(imgzaz_init), cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title('log no correction:')
         # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
-        plt.imshow(imgzaz, cmap='inferno', vmax=1300)
+        plt.subplot(233)
+        plt.imshow(aperture_init_phase, cmap='inferno')
         plt.colorbar(fraction=0.046, pad=0.04)
-        plt.title("ROi IMG")
-        plt.subplot(133)
-        plt.imshow(slm_phase, cmap='inferno')
+        plt.title(" no correction")
+        plt.subplot(234)
+        plt.imshow(imgzaz, cmap='inferno', vmax=24000)
         plt.colorbar(fraction=0.046, pad=0.04)
-        plt.title("slm_phase")
+        plt.title("aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(235)
+        plt.imshow(np.log10(imgzaz), cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("log aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(236)
+        plt.imshow(slm_phase * circular_aperture, cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("corrected")
+        # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
+    if saVe_plo:
+        plt.show(block=False)
+        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+        phFig.savefig(path_phase + '\\corrected_aper {}, bitDepth {}.png'.format(radios, phagen.modDepth),
+                      dpi=300, bbox_inches='tight', transparent=False)
+        plt.pause(0.8)
+        plt.close(phFig)
+    else:
         plt.show()
-        # plt.show(block=False)
-        # plt.pause(1)
-        # plt.close(fig)
 
-    circular_aperture = draw_circle(1024, 250)
+    "enable corection 300"
+    radios = 400
+    circular_aperture = draw_circle(1024, radios)
     circular_aperture = center_overlay(1272, 1024, circular_aperture)
+
+    "upload 2 slm"
+    aperture_init_phase = slm_phase_init * circular_aperture
+    slm_disp_obj.display(aperture_init_phase)
+
+    cam_obj.prep_acq()
+    cam_obj.take_image()
+    imgzaz_init = cam_obj.last_frame
 
     slm_phase = phagen.final_phuz * circular_aperture
     "upload 2 slm"
@@ -313,27 +379,224 @@ if correction_section:
     cam_obj.take_image()
     imgzaz = cam_obj.last_frame
 
-    che = True
-    if che:
-        fig = plt.figure()
-        plt.subplot(131)
-        plt.imshow(imgzaz_init, cmap='inferno', vmax=30000)
+    plo_che = True
+    if plo_che:
+        phFig = plt.figure()
+        plt.subplot(231)
+        plt.imshow(imgzaz_init, cmap='inferno', vmax=24000)
         plt.colorbar(fraction=0.046, pad=0.04)
-        plt.title('full IMG max V: {}'.format(np.amax(imgzaz)))
-        plt.subplot(132)
+        plt.title("aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(232)
+        plt.imshow(np.log10(imgzaz_init), cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title('log no correction:')
         # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
-        plt.imshow(imgzaz, cmap='inferno', vmax=1300)
+        plt.subplot(233)
+        plt.imshow(aperture_init_phase, cmap='inferno')
         plt.colorbar(fraction=0.046, pad=0.04)
-        plt.title("ROi IMG")
-        plt.subplot(133)
-        plt.imshow(slm_phase, cmap='inferno')
+        plt.title(" no correction")
+        plt.subplot(234)
+        plt.imshow(imgzaz, cmap='inferno', vmax=24000)
         plt.colorbar(fraction=0.046, pad=0.04)
-        plt.title("slm_phase")
+        plt.title("aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(235)
+        plt.imshow(np.log10(imgzaz), cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("log aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(236)
+        plt.imshow(slm_phase * circular_aperture, cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("corrected")
+        # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
+    if saVe_plo:
+        plt.show(block=False)
+        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+        phFig.savefig(path_phase + '\\corrected_aper {}, bitDepth {}.png'.format(radios, phagen.modDepth),
+                      dpi=300, bbox_inches='tight', transparent=False)
+        plt.pause(0.8)
+        plt.close(phFig)
+    else:
         plt.show()
-        # plt.show(block=False)
-        # plt.pause(1)
-        # plt.close(fig)
 
+    "enable corection 300"
+    radios = 350
+    circular_aperture = draw_circle(1024, radios)
+    circular_aperture = center_overlay(1272, 1024, circular_aperture)
+
+    "upload 2 slm"
+    aperture_init_phase = slm_phase_init * circular_aperture
+    slm_disp_obj.display(aperture_init_phase)
+
+    cam_obj.prep_acq()
+    cam_obj.take_image()
+    imgzaz_init = cam_obj.last_frame
+
+    slm_phase = phagen.final_phuz * circular_aperture
+    "upload 2 slm"
+    slm_disp_obj.display(slm_phase)
+
+    cam_obj.prep_acq()
+    cam_obj.take_image()
+    imgzaz = cam_obj.last_frame
+
+    plo_che = True
+    if plo_che:
+        phFig = plt.figure()
+        plt.subplot(231)
+        plt.imshow(imgzaz_init, cmap='inferno', vmax=24000)
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(232)
+        plt.imshow(np.log10(imgzaz_init), cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title('log no correction:')
+        # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
+        plt.subplot(233)
+        plt.imshow(aperture_init_phase, cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title(" no correction")
+        plt.subplot(234)
+        plt.imshow(imgzaz, cmap='inferno', vmax=24000)
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(235)
+        plt.imshow(np.log10(imgzaz), cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("log aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(236)
+        plt.imshow(slm_phase * circular_aperture, cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("corrected")
+        # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
+    if saVe_plo:
+        plt.show(block=False)
+        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+        phFig.savefig(path_phase + '\\corrected_aper {}, bitDepth {}.png'.format(radios, phagen.modDepth),
+                      dpi=300, bbox_inches='tight', transparent=False)
+        plt.pause(0.8)
+        plt.close(phFig)
+    else:
+        plt.show()
+
+    "enable corection 300"
+    radios = 300
+    circular_aperture = draw_circle(1024, radios)
+    circular_aperture = center_overlay(1272, 1024, circular_aperture)
+
+    "upload 2 slm"
+    aperture_init_phase = slm_phase_init * circular_aperture
+    slm_disp_obj.display(aperture_init_phase)
+
+    cam_obj.prep_acq()
+    cam_obj.take_image()
+    imgzaz_init = cam_obj.last_frame
+
+    slm_phase = phagen.final_phuz * circular_aperture
+    "upload 2 slm"
+    slm_disp_obj.display(slm_phase)
+
+    cam_obj.prep_acq()
+    cam_obj.take_image()
+    imgzaz = cam_obj.last_frame
+
+    plo_che = True
+    if plo_che:
+        phFig = plt.figure()
+        plt.subplot(231)
+        plt.imshow(imgzaz_init, cmap='inferno', vmax=24000)
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(232)
+        plt.imshow(np.log10(imgzaz_init), cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title('log no correction:')
+        # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
+        plt.subplot(233)
+        plt.imshow(aperture_init_phase, cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title(" no correction")
+        plt.subplot(234)
+        plt.imshow(imgzaz, cmap='inferno', vmax=24000)
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(235)
+        plt.imshow(np.log10(imgzaz), cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("log aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(236)
+        plt.imshow(slm_phase * circular_aperture, cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("corrected")
+        # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
+    if saVe_plo:
+        plt.show(block=False)
+        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+        phFig.savefig(path_phase + '\\corrected_aper {}, bitDepth {}.png'.format(radios, phagen.modDepth),
+                      dpi=300, bbox_inches='tight', transparent=False)
+        plt.pause(0.8)
+        plt.close(phFig)
+    else:
+        plt.show()
+
+    "enable corection 300"
+    radios = 200
+    circular_aperture = draw_circle(1024, radios)
+    circular_aperture = center_overlay(1272, 1024, circular_aperture)
+
+    "upload 2 slm"
+    aperture_init_phase = slm_phase_init * circular_aperture
+    slm_disp_obj.display(aperture_init_phase)
+
+    cam_obj.prep_acq()
+    cam_obj.take_image()
+    imgzaz_init = cam_obj.last_frame
+
+    slm_phase = phagen.final_phuz * circular_aperture
+    "upload 2 slm"
+    slm_disp_obj.display(slm_phase)
+
+    cam_obj.prep_acq()
+    cam_obj.take_image()
+    imgzaz = cam_obj.last_frame
+
+    plo_che = True
+    if plo_che:
+        phFig = plt.figure()
+        plt.subplot(231)
+        plt.imshow(imgzaz_init, cmap='inferno', vmax=24000)
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(232)
+        plt.imshow(np.log10(imgzaz_init), cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title('log no correction:')
+        # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
+        plt.subplot(233)
+        plt.imshow(aperture_init_phase, cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title(" no correction")
+        plt.subplot(234)
+        plt.imshow(imgzaz, cmap='inferno', vmax=24000)
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(235)
+        plt.imshow(np.log10(imgzaz), cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("log aper {}, bitDepth {}".format(radios, phagen.modDepth))
+        plt.subplot(236)
+        plt.imshow(slm_phase * circular_aperture, cmap='inferno')
+        plt.colorbar(fraction=0.046, pad=0.04)
+        plt.title("corrected")
+        # plt.imshow(imgzaz[1230:1530, 1080:1380], cmap='inferno', vmax=400)
+    if saVe_plo:
+        plt.show(block=False)
+        # img_nm = img_nom[:-4].replace(data_pAth_ame, '')meas_nom
+        phFig.savefig(path_phase + '\\corrected_aper {}, bitDepth {}.png'.format(radios, phagen.modDepth),
+                      dpi=300, bbox_inches='tight', transparent=False)
+        plt.pause(0.8)
+        plt.close(phFig)
+    else:
+        plt.show()
 
 print('es el finAl')
 
