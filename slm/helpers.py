@@ -211,4 +211,39 @@ def draw_circle(arraysz, radious):
     return arrr
 
 
+def do_overlay(bg_size_x, bg_size_y, arr, x0, y0):
+    """
+    ex - center_paste2canVas
+    pastes an array to a zero valued background array of the shApe of the slm
+    """
+    arr = np.asarray(arr)
+    aa = np.zeros((bg_size_y, bg_size_x))
+    arr_width = arr.shape[1]
+    arr_height = arr.shape[0]
+    start_x = ((bg_size_x - arr_width) // 2) + x0
+    start_y = ((bg_size_y - arr_height) // 2) + y0
+    aa[start_y:start_y + arr_height, start_x:start_x + arr_width] = arr[:, :]
+    return aa
+
+
+def draw_circle_displaced(arraysz, radious, x0, y0):
+    """creates a circle of given radious and pastes it
+        on a canvas of size arraysz displaced by x0, y0"""
+    xx, yy = np.mgrid[-radious:radious + 1, -radious:radious + 1]
+    circle = xx ** 2 + yy ** 2 <= radious ** 2
+    arrr = do_overlay(arraysz, arraysz, circle.astype(int), x0, y0)
+    return arrr
+
+
+def draw_n_paste_circle(canvas, radious, x0, y0, value):
+    xx, yy = np.mgrid[-radious:radious + 1, -radious:radious + 1]
+    circle = xx ** 2 + yy ** 2 <= radious ** 2
+    circle = circle * value
+    # arrr = do_overlay(arraysz, arraysz, circle.astype(int), x0, y0)
+    arr_width = circle.shape[1]
+    arr_height = circle.shape[0]
+    start_x = ((canvas.shape[1] - arr_width) // 2) + x0
+    start_y = ((canvas.shape[0] - arr_height) // 2) + y0
+    canvas[start_y:start_y + arr_height, start_x:start_x + arr_width] = circle[:, :]
+    return canvas
 # es el final
