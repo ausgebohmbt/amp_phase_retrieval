@@ -9,7 +9,7 @@ import numpy as np
 from colorama import Fore, Style  # , Back
 import copy
 from slm.helpers import (normalize, unimOD, closest_arr, draw_circle, center_overlay,
-                         draw_circle_displaced,  draw_n_paste_circle)
+                         draw_circle_displaced,  draw_n_paste_circle, separate_graph_regions)
 import orca.orca_autonoma as Cam
 from slm.slm_hama_amphase import slm
 from peripheral_instruments.thorlabs_shutter import shutter as sh
@@ -148,6 +148,9 @@ slm_disp_obj.display(slm_phase)
 cam_obj.take_average_image(frame_num)
 imgzaz = cam_obj.last_frame - bckgr
 
+"gotta keep em separated"
+stack_primus = separate_graph_regions(stack_sh_fk, img_noBg)
+
 "show em"
 rezs = plt.figure()
 plt.subplot(231)
@@ -173,7 +176,8 @@ plt.imshow(nossing, cmap='inferno')
 plt.title("nossing")
 plt.colorbar(fraction=0.046, pad=0.04)
 plt.subplot(236)
-plt.imshow(slm_phase, cmap='inferno')
+plt.imshow(stack_primus, cmap='inferno')
+# plt.imshow(slm_phase, cmap='inferno')
 plt.title("phase, bitness {}".format(phagen.modDepth))
 plt.colorbar(fraction=0.046, pad=0.04)
 plt.tight_layout()

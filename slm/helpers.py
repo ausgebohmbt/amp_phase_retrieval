@@ -246,4 +246,101 @@ def draw_n_paste_circle(canvas, radious, x0, y0, value):
     start_y = ((canvas.shape[0] - arr_height) // 2) + y0
     canvas[start_y:start_y + arr_height, start_x:start_x + arr_width] = circle[:, :]
     return canvas
+
+
+def separate_graph_regions(stack, graph):
+    """separate_graph_regions_of_dOOm , given a stack it is separated into three
+        different regions.
+        Gaussian fits are used to find the center of the peaks on a second input graph
+        which is the first layer of the stack where the background has been removed"""
+
+    approx_nulla = 1568
+    approx_primus = 1010
+    approx_secundus = 446
+    height_o_graph_o = graph.shape[0]
+    half_height_o_graph_o = int(graph.shape[0] // 2)
+    extend = 42
+    half_height_o_graph_o_extended = half_height_o_graph_o + extend
+    from_primus = approx_primus - half_height_o_graph_o_extended
+    from_nulla = approx_nulla - half_height_o_graph_o_extended
+
+    print("graph height: {}".format(half_height_o_graph_o))
+    graph_secundus = graph[:, approx_secundus - half_height_o_graph_o_extended:approx_secundus + half_height_o_graph_o_extended]
+    graph_primus = stack[:height_o_graph_o, from_primus:approx_primus + half_height_o_graph_o_extended]
+    graph_nulla = stack[:height_o_graph_o, from_nulla:approx_nulla + half_height_o_graph_o_extended]
+    print("shape graph_secundus: {}".format(graph_secundus.shape))
+    print("shape graph_primus ref: {}".format(graph_primus.shape))
+    print("shape graph_nulla ref: {}".format(graph_nulla.shape))
+
+    " define centers of radii and roiz "
+    # regione primae
+    yshape_primus, xshape_primus = graph_primus.shape
+    print("fit input x, y: {}, {}".format(xshape_primus, yshape_primus))
+    p_opt_msr, p_err_msr = fit_gaussian(graph_primus)
+    popt_clb_msr = p_opt_msr[:2]
+    print("popt_clb_msr, p_opt_msr: {}, {}".format(popt_clb_msr, p_opt_msr))
+    x_0_primus = int(popt_clb_msr[0] + xshape_primus // 2)  # x_0 = int(popt_clb[0] + nx // 2)
+    y_0_primus = int(popt_clb_msr[1] + yshape_primus // 2)  # y_0 = int(popt_clb[1] + ny // 2)
+    print('2d gau fit result of 1st order region: x0 = {}, y0 = {}'.format(x_0_primus, y_0_primus))
+
+    # regione nulla
+    yshape_nulla, xshape_nulla = graph_nulla.shape
+    print("fit input x, y: {}, {}".format(yshape_nulla, xshape_nulla))
+    p_opt_nulla, p_err_nulla = fit_gaussian(graph_primus)
+    popt_clb_nulla = p_opt_nulla[:2]
+    print("popt_clb_msr, p_opt_msr: {}, {}".format(popt_clb_nulla, p_opt_nulla))
+    x_0_nulla = int(popt_clb_nulla[0] + xshape_nulla // 2)  # x_0 = int(popt_clb[0] + nx // 2)
+    y_0_nulla = int(popt_clb_nulla[1] + yshape_nulla // 2)  # y_0 = int(popt_clb[1] + ny // 2)
+    print('2d gau fit result of 0th order region: x0 = {}, y0 = {}'.format(x_0_nulla, y_0_nulla))
+
+    # crop accordingly adjusting for selected radii
+    # print("sig rad, {}".format(half_height_o_graph_o))
+    # print("ref rad, {}".format(half_height_o_graph_o))
+    # track.roi_meas = [(x_0_primus - half_height_o_graph_o),
+    #                   (x_0_primus + half_height_o_graph_o + 1)]
+    # track.roi_ref = [(half_height_o_graph_o + 1) + (x_0_rf - half_height_o_graph_o),
+    #                  (half_height_o_graph_o + 1) + (x_0_rf + half_height_o_graph_o + 1)]
+    # print("roi meas, {}".format(track.roi_meas))
+    # print("roi ref, {}".format(track.roi_ref))
+    print('primus')
+
+    there_primus = from_primus + x_0_primus
+    from_new_primus = there_primus - half_height_o_graph_o_extended
+    coord_diff = from_new_primus - from_primus
+    stack_primus_crop = stack[:, from_new_primus:
+                                 (there_primus + half_height_o_graph_o_extended) + 1]
+
+    # print('2')
+    # graph_rf_crop = (graph_rf[:, (x_0_rf - half_height_o_graph_o):
+    #                                      (x_0_rf + half_height_o_graph_o + 1)]
+    #                      - track.bckgrnd_ref[
+    #                        :, x_0_rf - half_height_o_graph_o:
+    #                           (x_0_rf + half_height_o_graph_o + 1)])
+
+    import matplotlib.pyplot as plt
+    plt.subplot(131)
+    plt.vlines(x_0_primus, colors='m', ymin=0, ymax=stack.shape[0], linewidth=1.4)
+    plt.imshow(graph_primus, cmap='inferno')
+    plt.title("from_primus {}, there {}".format(from_primus, there_primus))
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(132)
+    plt.imshow(stack, cmap='inferno')
+    plt.title("x_0_primus {}, y_0_primus {}".format(x_0_primus, y_0_primus))
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(133)
+    plt.vlines(x_0_primus - coord_diff, colors='g', ymin=0, ymax=stack.shape[0], linewidth=1.4)
+    plt.imshow(stack_primus_crop, cmap='inferno')
+    plt.title("new point {}".format(x_0_primus + coord_diff))
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.tight_layout()
+    # plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+    plt.show()
+
+
+
+    return stack_primus_crop #, graph_rf_crop
+
+
+
+
 # es el final
