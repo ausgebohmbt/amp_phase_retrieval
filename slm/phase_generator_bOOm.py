@@ -249,7 +249,8 @@ class PhaseGen:
         else:
             lg = center_overlay(self.slmX, self.slmY, self.canVas)
         if self.whichphuzzez["corr_phase"]:
-            core_phuz = self.crxn_phuz_boom
+            # core_phuz = self.crxn_phuz_boom
+            print("its true")
             core_phuz = center_overlay(self.slmX, self.slmY, self.crxn_phuz_boom)
         else:
             core_phuz = center_overlay(self.slmX, self.slmY, self.canVas)

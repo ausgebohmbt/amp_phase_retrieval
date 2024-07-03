@@ -362,7 +362,7 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
             # print("prepin to a {} frames".format(self.num))
             self.hcam.setACQMode('fixed_length', number_frames=1)
         else:
-            # print("prepin to get av of  {} frames".format(self.num))
+            print("prepin to get av of  {} frames".format(self.num))
             self.hcam.setACQMode('fixed_length', number_frames=self.num)
         self.hcam.startAcquisition()
 
@@ -407,14 +407,9 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
         np.ndarray
             The averaged image as a NumPy array.
         """
-        # print("getting average of {} images, mpesa".format(num))
         self.num = num
         self.prep_acq()
-        # self.hcam.setACQMode('fixed_length', number_frames=self.num)
         ims = np.zeros((self.img_sz_y, self.img_sz_x))
-        # plt.imshow(ims, vmax=4)
-        # plt.show()
-        # self.hcam.startAcquisition()
         time.sleep(self.exposure[0] * self.num + 0.0249 * (self.num + 2))  # frame_interval is 0.0249,
         # added 2 times more because in the limit of 1-2ms exposures frames were lost
         the_frames = self.get_all_frames()
@@ -425,13 +420,6 @@ class LiveHamamatsu(BaseHamamatsu): # its a thread (inherits from Camera). it ru
             except Exception as e:
                 print(e)
         self.last_frame = ims.astype(np.float64) / self.num
-        # TODO: CLEAN UP
-        # plt.imshow(self.last_frame, cmap='inferno', vmax=140)
-        # plt.colorbar()
-        # plt.title("in cam")
-        # plt.show()
-        # self.hcam.stopAcquisition()
-        # image_aver = self.last_frame / num
 
     def run(self):
         if self.mode == "Live":

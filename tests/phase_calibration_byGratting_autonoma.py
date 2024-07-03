@@ -15,31 +15,13 @@ from slm.slm_hama_amphase import slm
 from peripheral_instruments.thorlabs_shutter import shutter as sh
 from slm.phase_generator_bOOm import phagen
 
-radios = 31
-spacing = 200
-more_space = 0
-print("spacing {}".format(spacing))
-singcular_aperture = draw_circle_displaced(1024, radios, spacing + more_space, 0)
-her_bitness = 0.01
-circular_aperture = draw_n_paste_circle(singcular_aperture*0.8, radios, -(spacing + more_space),
-                                        0, her_bitness)
-circular_aperture = center_overlay(1272, 1024, circular_aperture)
-
-"empty phases"
-# phagen.state_lg = False
-# phagen.whichphuzzez = {"grating": False, "lens": False, "phase": False, "amplitude": False, "corr_patt": True,
-#                        "lg_pol": False, "corr_phase": False}
-# # phagen.linear_grating()
-# phagen._make_full_slm_array()
-# nossing = phagen.final_phuz
-
-"circles a ha a a"
-# phagen.crxn_phuz_boom = circular_aperture
-# phagen.whichphuzzez = {"grating": False, "lens": False, "phase": False, "amplitude": False, "corr_patt": True,
-#                        "lg_pol": False, "corr_phase": True}
-# # phagen.linear_grating()
-# phagen._make_full_slm_array()
-# slm_phase_init = phagen.final_phuz
+"phase"
+phagen.modDepth = 220
+phagen.whichphuzzez = {"grating": True, "lens": False, "phase": False, "amplitude": False, "corr_patt": True,
+                       "lg_pol": False, "corr_phase": False}
+phagen.linear_grating()
+phagen._make_full_slm_array()
+slm_phase = phagen.final_phuz
 
 # fi = plt.figure()
 # plt.subplot(121)
@@ -76,8 +58,8 @@ cam_obj.hcam.setACQMode('fixed_length', number_frames=cam_obj.num)
 cam_obj.exposure
 
 "roi"
-cam_roi_pos = [1300, 800]  # grat 10 [1230:1530, 1080:1380]
-cam_roi_sz = [500, 500]  # grat 10
+cam_roi_pos = [0, 980]  # grat 10 [1230:1530, 1080:1380]
+cam_roi_sz = [2048, 100]  # grat 10
 cam_obj.roi_set_roi(int(cam_roi_pos[0] * cam_obj.bin_sz), int(cam_roi_pos[1] * cam_obj.bin_sz),
                     int(cam_roi_sz[0] * cam_obj.bin_sz), int(cam_roi_sz[1] * cam_obj.bin_sz))
 
@@ -93,9 +75,9 @@ if sh.shut_state == 1:
 time.sleep(0.4)
 sh.shutter_state()
 
-# time.sleep(1)
+time.sleep(0.5)
 
-frame_num = 20
+frame_num = 1
 cam_obj.stop_acq()
 cam_obj.take_average_image(frame_num)
 cam_obj.bckgr = copy.deepcopy(cam_obj.last_frame)
@@ -125,19 +107,24 @@ cam_obj.take_average_image(frame_num)
 img = cam_obj.last_frame
 img_noBg = cam_obj.last_frame - bckgr
 
+"stack em"
+stack_sh_fk = np.concatenate((img_noBg, img, bckgr), axis=0)
 
 plo_che = False
 if plo_che:
     fig = plt.figure()
-    plt.subplot(131), plt.imshow(img_noBg, cmap='inferno', vmin=0, vmax=1450)
+    plt.subplot(221), plt.imshow(img_noBg, cmap='inferno', vmin=0, vmax=1450)
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.title('no bckgr: {}'.format(4))
-    plt.subplot(132), plt.imshow(img, cmap='inferno')
+    plt.subplot(222), plt.imshow(img, cmap='inferno', vmax=2600)
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.title('original img: {}'.format(2))
-    # plt.subplot(133), plt.imshow(img[..., i], cmap='inferno', vmax=600)
-    # plt.colorbar(fraction=0.046, pad=0.04)
-    # plt.title('ROI')
+    plt.subplot(223), plt.imshow(bckgr, cmap='inferno', vmax=600)
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.title('bckgr')
+    plt.subplot(224), plt.imshow(stack_sh_fk, cmap='inferno', vmax=600)
+    plt.colorbar(fraction=0.046, pad=0.04)
+    plt.title('stack_sh_fk')
     plt.show()
     # plt.show(block=False)
     # fig.savefig(path + '\\iter_{}'.format(i) + '_full.png', dpi=300, bbox_inches='tight', transparent=False)
@@ -152,37 +139,45 @@ if plo_che:
 
 nossing = np.zeros((1024, 1272))
 
-
 "upload blank 2 slm"
 slm_disp_obj.display(nossing)
 cam_obj.take_average_image(frame_num)
 imgzaz_tipota = cam_obj.last_frame - bckgr
 
-slm_disp_obj.display(circular_aperture)
+slm_disp_obj.display(slm_phase)
 cam_obj.take_average_image(frame_num)
 imgzaz = cam_obj.last_frame - bckgr
 
-
+"show em"
+rezs = plt.figure()
 plt.subplot(231)
-plt.imshow(np.log10(imgzaz_tipota), cmap='inferno', vmax=3)
-plt.title("imgzaz nothing")
+plt.imshow(np.log10(stack_sh_fk), cmap='inferno')
+plt.title("log o' stack")
 plt.colorbar(fraction=0.046, pad=0.04)
 plt.subplot(232)
-plt.imshow(np.log10(imgzaz - imgzaz_tipota), cmap='inferno')
-plt.title("imgzaz clear log")
-plt.colorbar(fraction=0.046, pad=0.04)
+plt.plot(stack_sh_fk[:, 446])
+plt.plot(stack_sh_fk[:, 1010])
+plt.plot(stack_sh_fk[:, 1568])
+plt.title("profs")
+plt.legend(["2nd order", "1st order", "0th order"])
 plt.subplot(233)
-plt.imshow(circular_aperture, cmap='inferno')
-plt.title("slm_phase_init")
-plt.colorbar(fraction=0.046, pad=0.04)
+plt.plot(imgzaz_tipota[50, :])
+plt.plot(imgzaz[50, :])
+plt.title("profile at {}".format(50))
+plt.legend(["empty phase", "corretion & grating"])
 plt.subplot(234)
-plt.plot(imgzaz_tipota[227, :])
-plt.plot(imgzaz[227, :])
-plt.title("profile at {}".format(227))
+plt.plot(imgzaz[50, :] - imgzaz_tipota[50, :])
+plt.title("diff of prof @ {}".format(50))
 plt.subplot(235)
-plt.imshow(nossing - circular_aperture, cmap='inferno')
+plt.imshow(nossing, cmap='inferno')
 plt.title("nossing")
+plt.colorbar(fraction=0.046, pad=0.04)
 plt.subplot(236)
-plt.plot(imgzaz_tipota[100, :] - imgzaz[100, :])
-plt.title("log10 of profile at {}".format(100))
+plt.imshow(slm_phase, cmap='inferno')
+plt.title("phase, bitness {}".format(phagen.modDepth))
+plt.colorbar(fraction=0.046, pad=0.04)
+plt.tight_layout()
+# plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 plt.show()
+
+# es el final

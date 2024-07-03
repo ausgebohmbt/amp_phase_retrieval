@@ -286,7 +286,9 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         plt.show(block=False)
         plt.pause(1)
         plt.close(fig)
-    #
+
+    "record background"
+
     print(Fore.LIGHTGREEN_EX + "record background" + Style.RESET_ALL)
     # todo: need upload the proper phase for background acquisition, or wait a while for the camera to cool down
     # fixme: same goes for acquisition of first frame
