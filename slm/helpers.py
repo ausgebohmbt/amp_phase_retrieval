@@ -205,7 +205,7 @@ def fit_gaussian_extended_output(img, dx=None, dy=None, sig_x=15, sig_y=15, a=No
     :return: Fitting parameters, parameter errors.
     """
     if xy is None:
-        x, y = make_grid(img, scale=0.5)  # fixme: should there be a problem with the fits this is probably to blame
+        x, y = make_grid(img, scale=1)  # when 1, straightforwardly finds peak location, else need check
     else:
         x, y = xy
     x_data = np.vstack((x.ravel(), y.ravel()))
@@ -410,10 +410,10 @@ def separate_graph_regions(stack, graph):
     plt.title("new point nulla {}".format(x_0_nulla + coord_diff_nulla))
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.subplot(336)
-    plt.plot(graph_nulla[:, x_0_nulla], color='.m', linewidth=1.4)
-    plt.plot(graph_nulla[y_0_nulla, :], color='.b', linewidth=1.4)
-    plt.plot(gaussian_int(p_opt_nulla[0], p_opt_nulla[1], p_opt_nulla[2], p_opt_nulla[3], p_opt_nulla[4],
-                          p_opt_nulla[5]), colors='.b', linewidth=1.4)
+    plt.plot(graph_nulla[:, x_0_nulla], color='m', linestyle="dotted", linewidth=1.4)
+    plt.plot(graph_nulla[y_0_nulla, :], color='teal', linestyle="dotted", linewidth=1.4)
+    plt.plot(prof_y_nulla, color='seagreen', linewidth=1.4)
+    plt.plot(prof_x_nulla, color='salmon', linewidth=1.4)
     plt.title("amp_fit {}, amp_data {}".format(ampFit_nulla, ampData_nulla))
     plt.subplot(337)
     plt.vlines(x_0_secundus, colors='m', ymin=0, ymax=stack.shape[0], linewidth=1.4)
@@ -426,10 +426,10 @@ def separate_graph_regions(stack, graph):
     plt.title("new point secundus {}".format(x_0_secundus + coord_diff_secundus))
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.subplot(339)
-    plt.plot(graph_secundus[:, x_0_secundus], color='.m', linewidth=1.4)
-    plt.plot(graph_secundus[y_0_secundus, :], color='.b', linewidth=1.4)
-    plt.plot(gaussian_int(p_opt_secundus[0], p_opt_secundus[1], p_opt_secundus[2], p_opt_secundus[3],
-                          p_opt_secundus[4], p_opt_secundus[5]), colors='.b', linewidth=1.4)
+    plt.plot(graph_secundus[:, x_0_secundus], color='m', linestyle="dotted", linewidth=1.4)
+    plt.plot(graph_secundus[y_0_secundus, :], color='teal', linestyle="dotted", linewidth=1.4)
+    plt.plot(prof_y_secundus, color='seagreen', linewidth=1.4)
+    plt.plot(prof_x_secundus, color='salmon', linewidth=1.4)
     plt.title("amp_fit {}, amp_data {}".format(ampFit_secundus, ampData_secundus))
     plt.tight_layout()
     # plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
