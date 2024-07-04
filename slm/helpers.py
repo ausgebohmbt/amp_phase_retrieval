@@ -220,12 +220,20 @@ def fit_gaussian_extended_output(img, dx=None, dy=None, sig_x=15, sig_y=15, a=No
         a = np.max(img_blur)
     # Define initial parameter guess.
     p0 = [(dx, dy, sig_x, sig_y, a, c)]
-    popt, pcov = opt.curve_fit(gaussian, x_data, img.ravel(), p0, maxfev=10000)
+    try:
+        popt, pcov = opt.curve_fit(gaussian, x_data, img.ravel(), p0, maxfev=10000)
 
-    # Calculate errors
-    perr = np.sqrt(np.diag(pcov))
-    # recreate, annihilate
-    recreated = gaussian_int(x, y, popt[0], popt[1], popt[2], popt[3], popt[4], popt[5])
+        # Calculate errors
+        perr = np.sqrt(np.diag(pcov))
+        # recreate, annihilate
+        recreated = gaussian_int(x, y, popt[0], popt[1], popt[2], popt[3], popt[4], popt[5])
+    except RuntimeError:
+        popt, pcov = p0, p0
+        perr = 0
+        recreated = np.zeros(img.shape)
+        print(Fore.LIGHTRED_EX +
+              'Optimal parameters not found: Number of calls to function has reached maxfev = 10000' + Style.RESET_ALL)
+
     return popt, perr, recreated
 
 
@@ -305,38 +313,48 @@ def separate_graph_regions(stack, graph, saVe_path, modDepth, crop_sz=2, saVe_pl
     from_nulla = approx_nulla - half_height_o_graph_o_extended
     from_secundus = approx_secundus - half_height_o_graph_o_extended
 
-    print("graph height: {}".format(half_height_o_graph_o))
+    # print("graph height: {}".format(half_height_o_graph_o))
     graph_primus = stack[:height_o_graph_o, from_primus:approx_primus + half_height_o_graph_o_extended]
     graph_nulla = stack[:height_o_graph_o, from_nulla:approx_nulla + half_height_o_graph_o_extended]
     graph_secundus = stack[:height_o_graph_o, from_secundus:approx_secundus + half_height_o_graph_o_extended]
-    print("shape graph_secundus: {}".format(graph_secundus.shape))
-    print("shape graph_primus ref: {}".format(graph_primus.shape))
-    print("shape graph_nulla ref: {}".format(graph_nulla.shape))
+    # print("shape graph_secundus: {}".format(graph_secundus.shape))
+    # print("shape graph_primus ref: {}".format(graph_primus.shape))
+    # print("shape graph_nulla ref: {}".format(graph_nulla.shape))
 
     " define centers of radii and roiz "
     # regione primae
     yshape_primus, xshape_primus = graph_primus.shape
-    print("fit input x, y: {}, {}".format(xshape_primus, yshape_primus))
+    # print("fit input x, y: {}, {}".format(xshape_primus, yshape_primus))
     p_opt_primus, p_err_primus, gaussian2d_primus = fit_gaussian_extended_output(graph_primus)
     popt_clb_primus = p_opt_primus[:2]
-    print("popt_clb_primus, p_opt_primus: {}, {}".format(popt_clb_primus, p_opt_primus))
-    x_0_primus = int(popt_clb_primus[0] + xshape_primus // 2)  # x_0 = int(popt_clb[0] + nx // 2)
-    y_0_primus = int(popt_clb_primus[1] + yshape_primus // 2)  # y_0 = int(popt_clb[1] + ny // 2)
-    ampFit_primus = int(p_opt_primus[4])
-    ampData_primus = int(graph_primus[y_0_primus, x_0_primus])
-    prof_x_primus = gaussian2d_primus[y_0_primus, :]
-    prof_y_primus = gaussian2d_primus[:, x_0_primus]
+    # print("popt_clb_primus, p_opt_primus: {}, {}".format(popt_clb_primus, p_opt_primus))
+    try:
+        x_0_primus = int(popt_clb_primus[0] + xshape_primus // 2)  # x_0 = int(popt_clb[0] + nx // 2)
+        y_0_primus = int(popt_clb_primus[1] + yshape_primus // 2)  # y_0 = int(popt_clb[1] + ny // 2)
+        ampFit_primus = int(p_opt_primus[4])
+        ampData_primus = int(graph_primus[y_0_primus, x_0_primus])
+        prof_x_primus = gaussian2d_primus[y_0_primus, :]
+        prof_y_primus = gaussian2d_primus[:, x_0_primus]
+    except Exception as e:
+        print(e)
+        x_0_primus = int(0 + xshape_primus // 2)  # x_0 = int(popt_clb[0] + nx // 2)
+        y_0_primus = int(0 + yshape_primus // 2)  # y_0 = int(popt_clb[1] + ny // 2)
+        ampFit_primus = int(0)
+        ampData_primus = 0
+        print(Fore.LIGHTRED_EX + 'no peak found for 1st order' + Style.RESET_ALL)
+        prof_x_primus = np.zeros(graph_primus.shape)
+        prof_y_primus = np.zeros(graph_primus.shape)
     amps_primus = [ampFit_primus, ampData_primus]
-    print('2d gau fit result of 1st order region: x0 = {}, y0 = {}'.format(x_0_primus, y_0_primus))
+    # print('2d gau fit result of 1st order region: x0 = {}, y0 = {}'.format(x_0_primus, y_0_primus))
     print(Fore.LIGHTGREEN_EX +
           'fitted amp vs data: fit = {}, data = {}'.format(ampFit_primus, ampData_primus) + Style.RESET_ALL)
 
     # regione nulla
     yshape_nulla, xshape_nulla = graph_nulla.shape
-    print("fit input x, y: {}, {}".format(yshape_nulla, xshape_nulla))
+    # print("fit input x, y: {}, {}".format(yshape_nulla, xshape_nulla))
     p_opt_nulla, p_err_nulla, gaussian2d_nulla = fit_gaussian_extended_output(graph_nulla)
     popt_clb_nulla = p_opt_nulla[:2]
-    print("popt_clb_nulla, p_opt_nulla: {}, {}".format(popt_clb_nulla, p_opt_nulla))
+    # print("popt_clb_nulla, p_opt_nulla: {}, {}".format(popt_clb_nulla, p_opt_nulla))
     x_0_nulla = int(popt_clb_nulla[0] + xshape_nulla // 2)  # x_0 = int(popt_clb[0] + nx // 2)
     y_0_nulla = int(popt_clb_nulla[1] + yshape_nulla // 2)  # y_0 = int(popt_clb[1] + ny // 2)
     ampFit_nulla = int(p_opt_nulla[4])
@@ -344,24 +362,34 @@ def separate_graph_regions(stack, graph, saVe_path, modDepth, crop_sz=2, saVe_pl
     prof_x_nulla = gaussian2d_nulla[y_0_nulla, :]
     prof_y_nulla = gaussian2d_nulla[:, x_0_nulla]
     amps_nulla = [ampFit_nulla, ampData_nulla]
-    print('2d gau fit result of 0th order region: x0 = {}, y0 = {}'.format(x_0_nulla, y_0_nulla))
+    # print('2d gau fit result of 0th order region: x0 = {}, y0 = {}'.format(x_0_nulla, y_0_nulla))
     print(Fore.LIGHTRED_EX +
           'fitted amp vs data: fit = {}, data = {}'.format(ampFit_nulla, ampData_nulla) + Style.RESET_ALL)
 
     # secunda regione
     yshape_secundus, xshape_secundus = graph_secundus.shape
-    print("fit input x, y: {}, {}".format(yshape_secundus, xshape_secundus))
+    # print("fit input x, y: {}, {}".format(yshape_secundus, xshape_secundus))
     p_opt_secundus, p_err_secundus, gaussian2d_secundus = fit_gaussian_extended_output(graph_secundus)
     popt_clb_secundus = p_opt_secundus[:2]
-    print("popt_clb_secundus, p_opt_secundus: {}, {}".format(popt_clb_secundus, p_opt_secundus))
-    x_0_secundus = int(popt_clb_secundus[0] + xshape_secundus // 2)  # x_0 = int(popt_clb[0] + nx // 2)
-    y_0_secundus = int(popt_clb_secundus[1] + yshape_secundus // 2)  # y_0 = int(popt_clb[1] + ny // 2)
-    ampFit_secundus = int(p_opt_secundus[4])
-    ampData_secundus = int(graph_secundus[y_0_secundus, x_0_secundus])
-    prof_x_secundus = gaussian2d_secundus[y_0_secundus, :]
-    prof_y_secundus = gaussian2d_secundus[:, x_0_secundus]
+    # print("popt_clb_secundus, p_opt_secundus: {}, {}".format(popt_clb_secundus, p_opt_secundus))
+    try:
+        x_0_secundus = int(popt_clb_secundus[0] + xshape_secundus // 2)  # x_0 = int(popt_clb[0] + nx // 2)
+        y_0_secundus = int(popt_clb_secundus[1] + yshape_secundus // 2)  # y_0 = int(popt_clb[1] + ny // 2)
+        ampFit_secundus = int(p_opt_secundus[4])
+        ampData_secundus = int(graph_secundus[y_0_secundus, x_0_secundus])
+        prof_x_secundus = gaussian2d_secundus[y_0_secundus, :]
+        prof_y_secundus = gaussian2d_secundus[:, x_0_secundus]
+    except Exception as e:
+        print(e)
+        x_0_secundus = int(0 + xshape_secundus // 2)  # x_0 = int(popt_clb[0] + nx // 2)
+        y_0_secundus = int(0 + yshape_secundus // 2)  # y_0 = int(popt_clb[1] + ny // 2)
+        ampFit_secundus = 0
+        ampData_secundus = 0
+        print(Fore.LIGHTRED_EX + 'no peak found on second order' + Style.RESET_ALL)
+        prof_x_secundus = np.zeros(graph_secundus.shape)
+        prof_y_secundus = np.zeros(graph_secundus.shape)
     amps_secundus = [ampFit_secundus, ampData_secundus]
-    print('2d gau fit result of 2nd order region: x0 = {}, y0 = {}'.format(x_0_secundus, y_0_secundus))
+    # print('2d gau fit result of 2nd order region: x0 = {}, y0 = {}'.format(x_0_secundus, y_0_secundus))
     print(Fore.LIGHTBLUE_EX +
           'fitted amp vs data: fit = {}, data = {}'.format(ampFit_secundus, ampData_secundus) + Style.RESET_ALL)
 
@@ -397,14 +425,20 @@ def separate_graph_regions(stack, graph, saVe_path, modDepth, crop_sz=2, saVe_pl
     plt.subplot(332)
     plt.vlines(x_0_primus - coord_diff, colors='g', ymin=0, ymax=stack.shape[0], linewidth=0.8)
     plt.imshow(stack_primus_crop, cmap='inferno')
+    plt.title("modDepth {}".format(modDepth))
     # plt.title("new point {}".format(x_0_primus + coord_diff))
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.subplot(333)
-    plt.plot(graph_primus[:, x_0_primus], color='m', linestyle="dotted", linewidth=1.4)
-    plt.plot(graph_primus[y_0_primus, :], color='teal', linestyle="dotted", linewidth=1.4)
+    try:
+        plt.plot(graph_primus[:, x_0_primus], color='m', linestyle="dotted", linewidth=1.4)
+        plt.plot(graph_primus[y_0_primus, :], color='teal', linestyle="dotted", linewidth=1.4)
+    except IndexError:
+        plt.plot(graph_primus[:, int(graph_primus.shape[0]/2)], color='m', linestyle="dotted", linewidth=1.4)
+        plt.plot(graph_primus[int(graph_primus.shape[0]/2), :], color='teal', linestyle="dotted", linewidth=1.4)
     plt.plot(prof_y_primus, color='seagreen', linewidth=0.8)
     plt.plot(prof_x_primus, color='salmon', linewidth=0.8)
     plt.title("amp_fit {}, amp_data {}".format(ampFit_primus, ampData_primus))
+    plt.legend(["data y, data x, fit y, fit x"])
     plt.subplot(334)
     plt.vlines(x_0_nulla, colors='m', ymin=0, ymax=stack.shape[0], linewidth=0.8)
     plt.imshow(graph_nulla, cmap='inferno')
@@ -422,6 +456,7 @@ def separate_graph_regions(stack, graph, saVe_path, modDepth, crop_sz=2, saVe_pl
     plt.plot(prof_y_nulla, color='seagreen', linewidth=0.8)
     plt.plot(prof_x_nulla, color='salmon', linewidth=0.8)
     plt.title("amp_fit {}, amp_data {}".format(ampFit_nulla, ampData_nulla))
+    plt.legend(["data y, data x, fit y, fit x"])
     plt.subplot(337)
     plt.vlines(x_0_secundus, colors='m', ymin=0, ymax=stack.shape[0], linewidth=0.8)
     plt.imshow(graph_secundus, cmap='inferno')
@@ -434,11 +469,16 @@ def separate_graph_regions(stack, graph, saVe_path, modDepth, crop_sz=2, saVe_pl
     # plt.title("new point secundus {}".format(x_0_secundus + coord_diff_secundus))
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.subplot(339)
-    plt.plot(graph_secundus[:, x_0_secundus], color='m', linestyle="dotted", linewidth=1.4)
-    plt.plot(graph_secundus[y_0_secundus, :], color='teal', linestyle="dotted", linewidth=1.4)
+    try:
+        plt.plot(graph_secundus[:, x_0_secundus], color='m', linestyle="dotted", linewidth=1.4)
+        plt.plot(graph_secundus[y_0_secundus, :], color='teal', linestyle="dotted", linewidth=1.4)
+    except IndexError:
+        plt.plot(graph_secundus[:, int(graph_secundus.shape[0]/2)], color='m', linestyle="dotted", linewidth=1.4)
+        plt.plot(graph_secundus[int(graph_secundus.shape[0]/2), :], color='teal', linestyle="dotted", linewidth=1.4)
     plt.plot(prof_y_secundus, color='seagreen', linewidth=0.8)
     plt.plot(prof_x_secundus, color='salmon', linewidth=0.8)
     plt.title("amp_fit {}, amp_data {}".format(ampFit_secundus, ampData_secundus))
+    plt.legend(["data y, data x, fit y, fit x"])
     plt.tight_layout()
     # plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
     if saVe_plo:

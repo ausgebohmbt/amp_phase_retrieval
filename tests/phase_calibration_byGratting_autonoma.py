@@ -1,6 +1,4 @@
-# this is an implementation of the method described in:
-# https://doi.org/10.1016/j.optlaseng.2020.106132
-
+# track intensity of the 0th, 1st & 2nd order spots while changing the bit depth of the phase
 # https://photutils.readthedocs.io/en/stable/centroids.html  # has script for centroid detection, a ha a a
 
 import time
@@ -9,14 +7,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from colorama import Fore, Style  # , Back
 import copy
-from slm.helpers import (normalize, unimOD, closest_arr, draw_circle, center_overlay,
-                         draw_circle_displaced,  draw_n_paste_circle, separate_graph_regions)
+from slm.helpers import separate_graph_regions
 import orca.orca_autonoma as Cam
 from slm.slm_hama_amphase import slm
 from peripheral_instruments.thorlabs_shutter import shutter as sh
 from slm.phase_generator_bOOm import phagen
 
 
+"save conditions"
 save_path = "E:/mitsos/pYthOn/slm_chronicles/amphuz_retriev/result/phase_calibration/"
 saVe_plot = True
 if saVe_plot:
@@ -34,7 +32,7 @@ cam_obj = Cam.LiveHamamatsu(**params)
 slm_disp_obj = slm
 
 "prep cam"
-frame_num = 1
+frame_num = 20
 cam_obj.mode = "Acq"
 cam_obj.num = 1
 cam_obj.bin_sz = 1
@@ -70,13 +68,12 @@ plo_che = False
 if plo_che:
     fig = plt.figure()
     plt.imshow(bckgr, cmap='inferno', vmax=150)
-    # plt.imshow(bckgr[1230:1530, 1080:1380], cmap='inferno', vmax=150)
     plt.colorbar()
     plt.title('backg')
     plt.show()
     # plt.show(block=False)
-    plt.pause(1)
-    plt.close(fig)
+    # plt.pause(1)
+    # plt.close(fig)
 
 "open shutter"
 sh.shutter_state()
@@ -95,28 +92,72 @@ phagen.linear_grating()
 # todo: can I replace the original take_average_image in the Cam Class with a new one that does
 #  not prep every time
 
-"phase"
-phagen.modDepth = 220
-phagen._make_full_slm_array()
+print("save condition is set to {}".format(saVe_plot))
 
-"up to slm"
-slm_disp_obj.display(phagen.final_phuz)
+amp_0 = []
+amp_1st = []
+amp_2nd = []
+for mo in range(255):
+    print("bit depth is {}".format(mo))
 
-"get image"
-cam_obj.take_average_image(frame_num)
-img = cam_obj.last_frame
-img_noBg = cam_obj.last_frame - bckgr
+    "phase"
+    phagen.modDepth = mo
+    phagen._make_full_slm_array()
 
-"stack em"
-stack_sh_fk = np.concatenate((img_noBg, img, bckgr), axis=0)
+    "up to slm"
+    slm_disp_obj.display(phagen.final_phuz)
 
-"gotta keep em separated"
-amps_primus, amps_nulla, amps_secundus = separate_graph_regions(stack_sh_fk, img_noBg,
-                                                                save_path, modDepth=phagen.modDepth,
-                                                                crop_sz=10, saVe_plo=saVe_plot)
+    "get image"
+    cam_obj.take_average_image(frame_num)
+    img = cam_obj.last_frame
+    img_noBg = cam_obj.last_frame - bckgr
+
+    "stack em"
+    stack_sh_fk = np.concatenate((img_noBg, img, bckgr), axis=0)
+
+    "gotta keep em separated"
+    amps_primus, amps_nulla, amps_secundus = separate_graph_regions(stack_sh_fk, img_noBg,
+                                                                    save_path, modDepth=phagen.modDepth,
+                                                                    crop_sz=10, saVe_plo=saVe_plot)
+    "book-keeping"
+    amp_0.append(amps_nulla)
+    amp_1st.append(amps_primus)
+    amp_2nd.append(amps_secundus)
+
+"save em"
+np.save(save_path + '//amp_0', amp_0)
+np.save(save_path + '//amp_1', amp_1st)
+np.save(save_path + '//amp_2', amp_2nd)
 
 
 # "show em"
-
+Fig = plt.figure()
+plt.subplot(131)
+plt.plot(amp_1st[0][:], color='darkorchid', linestyle="dotted", linewidth=1.4, label="data")
+plt.plot(amp_1st[1][:], color='teal', linewidth=0.8, label="fit")
+# plt.title("amp_fit {}, amp_data {}".format(ampFit_primus, ampData_primus))
+plt.title("amp_1st")
+plt.legend()
+plt.subplot(132)
+plt.plot(amp_0[0][:], color='darkorchid', linestyle="dotted", linewidth=1.4, label="data")
+plt.plot(amp_0[1][:], color='teal', linewidth=0.8, label="fit")
+# plt.title("amp_fit {}, amp_data {}".format(ampFit_primus, ampData_primus))
+plt.title("amp_0")
+plt.legend()
+plt.subplot(133)
+plt.plot(amp_2nd[0][:], color='darkorchid', linestyle="dotted", linewidth=1.4, label="data")
+plt.plot(amp_2nd[1][:], color='teal', linewidth=0.8, label="fit")
+# plt.title("amp_fit {}, amp_data {}".format(ampFit_primus, ampData_primus))
+plt.title("amp_2nd")
+plt.legend()
+plt.tight_layout()
+# plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+if saVe_plot:
+    plt.show(block=False)
+    Fig.savefig(save_path + '\\bitDepth_calibration_result.png', dpi=300, bbox_inches='tight', transparent=False)
+    plt.pause(0.8)
+    plt.close(Fig)
+else:
+    plt.show()
 
 # es el final
