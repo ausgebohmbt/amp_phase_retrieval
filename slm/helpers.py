@@ -4,7 +4,7 @@ import itertools
 import numpy as np
 import scipy
 import scipy.optimize as opt
-
+from colorama import Fore, Style  # , Back
 
 def moving_average(iterable, n=3):
     # moving_average([40, 30, 50, 46, 39, 44]) --> 40.0 42.0 45.0 43.0
@@ -189,6 +189,44 @@ def fit_gaussian(img, dx=None, dy=None, sig_x=15, sig_y=15, a=None, c=0, blur_wi
     return popt, perr
 
 
+def fit_gaussian_extended_output(img, dx=None, dy=None, sig_x=15, sig_y=15, a=None, c=0, blur_width=10, xy=None):
+    """
+    Fits a 2D Gaussian to an image. The image s blurred using a Gaussian filer before fitting.
+
+    :param img: Input image.
+    :param dx: X-offset of Gaussian [px].
+    :param dy: Y-offset of Gaussian [px].
+    :param sig_x: X-width of Gaussian [px].
+    :param sig_y: -width of Gaussian [px].
+    :param a: Amplitude.
+    :param c: Offset.
+    :param blur_width: Width of Gaussian blurring kernel [px].
+    :param xy: X, Y meshgrid. If not specified, pixel coordinates are used.
+    :return: Fitting parameters, parameter errors.
+    """
+    if xy is None:
+        x, y = make_grid(img, scale=0.5)  # fixme: should there be a problem with the fits this is probably to blame
+    else:
+        x, y = xy
+    x_data = np.vstack((x.ravel(), y.ravel()))
+    img_blur = scipy.ndimage.gaussian_filter(img, blur_width)
+    if dx is None or dy is None:
+        dy, dx = np.unravel_index(np.argmax(img_blur), img.shape)
+        dx -= img.shape[1] / 2
+        dy -= img.shape[0] / 2
+    if a is None:
+        a = np.max(img_blur)
+    # Define initial parameter guess.
+    p0 = [(dx, dy, sig_x, sig_y, a, c)]
+    popt, pcov = opt.curve_fit(gaussian, x_data, img.ravel(), p0, maxfev=10000)
+
+    # Calculate errors
+    perr = np.sqrt(np.diag(pcov))
+    # recreate, annihilate
+    recreated = gaussian_int(x, y, popt[0], popt[1], popt[2], popt[3], popt[4], popt[5])
+    return popt, perr, recreated
+
+
 def closest(lst, K) -> tuple:
     """searches list lst for the closest value to K.
 
@@ -277,32 +315,50 @@ def separate_graph_regions(stack, graph):
     # regione primae
     yshape_primus, xshape_primus = graph_primus.shape
     print("fit input x, y: {}, {}".format(xshape_primus, yshape_primus))
-    p_opt_msr, p_err_msr = fit_gaussian(graph_primus)
-    popt_clb_msr = p_opt_msr[:2]
-    print("popt_clb_msr, p_opt_msr: {}, {}".format(popt_clb_msr, p_opt_msr))
-    x_0_primus = int(popt_clb_msr[0] + xshape_primus // 2)  # x_0 = int(popt_clb[0] + nx // 2)
-    y_0_primus = int(popt_clb_msr[1] + yshape_primus // 2)  # y_0 = int(popt_clb[1] + ny // 2)
+    p_opt_primus, p_err_primus, gaussian2d_primus = fit_gaussian_extended_output(graph_primus)
+    popt_clb_primus = p_opt_primus[:2]
+    print("popt_clb_primus, p_opt_primus: {}, {}".format(popt_clb_primus, p_opt_primus))
+    x_0_primus = int(popt_clb_primus[0] + xshape_primus // 2)  # x_0 = int(popt_clb[0] + nx // 2)
+    y_0_primus = int(popt_clb_primus[1] + yshape_primus // 2)  # y_0 = int(popt_clb[1] + ny // 2)
+    ampFit_primus = p_opt_primus[4]
+    ampData_primus = graph_primus[y_0_primus, x_0_primus]
+    prof_x_primus = gaussian2d_primus[y_0_primus, :]
+    prof_y_primus = gaussian2d_primus[:, x_0_primus]
     print('2d gau fit result of 1st order region: x0 = {}, y0 = {}'.format(x_0_primus, y_0_primus))
+    print(Fore.LIGHTGREEN_EX +
+          'fitted amp vs data: fit = {}, data = {}'.format(ampFit_primus, ampData_primus) + Style.RESET_ALL)
 
     # regione nulla
     yshape_nulla, xshape_nulla = graph_nulla.shape
     print("fit input x, y: {}, {}".format(yshape_nulla, xshape_nulla))
-    p_opt_nulla, p_err_nulla = fit_gaussian(graph_nulla)
+    p_opt_nulla, p_err_nulla, gaussian2d_nulla = fit_gaussian_extended_output(graph_nulla)
     popt_clb_nulla = p_opt_nulla[:2]
-    print("popt_clb_msr, p_opt_msr: {}, {}".format(popt_clb_nulla, p_opt_nulla))
+    print("popt_clb_nulla, p_opt_nulla: {}, {}".format(popt_clb_nulla, p_opt_nulla))
     x_0_nulla = int(popt_clb_nulla[0] + xshape_nulla // 2)  # x_0 = int(popt_clb[0] + nx // 2)
     y_0_nulla = int(popt_clb_nulla[1] + yshape_nulla // 2)  # y_0 = int(popt_clb[1] + ny // 2)
+    ampFit_nulla = p_opt_nulla[4]
+    ampData_nulla = graph_nulla[y_0_nulla, x_0_nulla]
+    prof_x_nulla = gaussian2d_nulla[y_0_nulla, :]
+    prof_y_nulla = gaussian2d_nulla[:, x_0_nulla]
     print('2d gau fit result of 0th order region: x0 = {}, y0 = {}'.format(x_0_nulla, y_0_nulla))
+    print(Fore.LIGHTRED_EX +
+          'fitted amp vs data: fit = {}, data = {}'.format(ampFit_nulla, ampData_nulla) + Style.RESET_ALL)
 
     # secunda regione
     yshape_secundus, xshape_secundus = graph_secundus.shape
     print("fit input x, y: {}, {}".format(yshape_secundus, xshape_secundus))
-    p_opt_secundus, p_err_secundus = fit_gaussian(graph_secundus)
+    p_opt_secundus, p_err_secundus, gaussian2d_secundus = fit_gaussian_extended_output(graph_secundus)
     popt_clb_secundus = p_opt_secundus[:2]
-    print("popt_clb_msr, p_opt_msr: {}, {}".format(popt_clb_secundus, p_opt_secundus))
+    print("popt_clb_secundus, p_opt_secundus: {}, {}".format(popt_clb_secundus, p_opt_secundus))
     x_0_secundus = int(popt_clb_secundus[0] + xshape_secundus // 2)  # x_0 = int(popt_clb[0] + nx // 2)
     y_0_secundus = int(popt_clb_secundus[1] + yshape_secundus // 2)  # y_0 = int(popt_clb[1] + ny // 2)
+    ampFit_secundus = p_opt_secundus[4]
+    ampData_secundus = graph_secundus[y_0_secundus, x_0_secundus]
+    prof_x_secundus = gaussian2d_secundus[y_0_secundus, :]
+    prof_y_secundus = gaussian2d_secundus[:, x_0_secundus]
     print('2d gau fit result of 2nd order region: x0 = {}, y0 = {}'.format(x_0_secundus, y_0_secundus))
+    print(Fore.LIGHTBLUE_EX +
+          'fitted amp vs data: fit = {}, data = {}'.format(ampFit_secundus, ampData_secundus) + Style.RESET_ALL)
 
     print('primus')
     there_primus = from_primus + x_0_primus
@@ -326,43 +382,59 @@ def separate_graph_regions(stack, graph):
                                  (there_secundus + half_height_o_graph_o_extended) + 1]
 
     import matplotlib.pyplot as plt
-    plt.subplot(231)
+
+    plt.subplot(331)
     plt.vlines(x_0_primus, colors='m', ymin=0, ymax=stack.shape[0], linewidth=1.4)
     plt.imshow(graph_primus, cmap='inferno')
     plt.title("from_primus {}, there {}".format(from_primus, there_primus))
     plt.colorbar(fraction=0.046, pad=0.04)
-    plt.subplot(232)
+    plt.subplot(332)
     plt.vlines(x_0_primus - coord_diff, colors='g', ymin=0, ymax=stack.shape[0], linewidth=1.4)
     plt.imshow(stack_primus_crop, cmap='inferno')
     plt.title("new point {}".format(x_0_primus + coord_diff))
     plt.colorbar(fraction=0.046, pad=0.04)
-    plt.subplot(233)
+    plt.subplot(333)
+    plt.plot(graph_primus[:, x_0_primus], color='m', linestyle="dotted", linewidth=1.4)
+    plt.plot(graph_primus[y_0_primus, :], color='teal', linestyle="dotted", linewidth=1.4)
+    plt.plot(prof_y_primus, color='seagreen', linewidth=1.4)
+    plt.plot(prof_x_primus, color='salmon', linewidth=1.4)
+    plt.title("amp_fit {}, amp_data {}".format(ampFit_primus, ampData_primus))
+    plt.subplot(334)
     plt.vlines(x_0_nulla, colors='m', ymin=0, ymax=stack.shape[0], linewidth=1.4)
     plt.imshow(graph_nulla, cmap='inferno')
     plt.title("from_nulla {}, there_nulla {}".format(from_nulla, there_nulla))
     plt.colorbar(fraction=0.046, pad=0.04)
-    plt.subplot(234)
+    plt.subplot(335)
     plt.vlines(x_0_nulla - coord_diff_nulla, colors='g', ymin=0, ymax=stack.shape[0], linewidth=1.4)
     plt.imshow(stack_nulla_crop, cmap='inferno')
     plt.title("new point nulla {}".format(x_0_nulla + coord_diff_nulla))
     plt.colorbar(fraction=0.046, pad=0.04)
-    plt.subplot(235)
+    plt.subplot(336)
+    plt.plot(graph_nulla[:, x_0_nulla], color='.m', linewidth=1.4)
+    plt.plot(graph_nulla[y_0_nulla, :], color='.b', linewidth=1.4)
+    plt.plot(gaussian_int(p_opt_nulla[0], p_opt_nulla[1], p_opt_nulla[2], p_opt_nulla[3], p_opt_nulla[4],
+                          p_opt_nulla[5]), colors='.b', linewidth=1.4)
+    plt.title("amp_fit {}, amp_data {}".format(ampFit_nulla, ampData_nulla))
+    plt.subplot(337)
     plt.vlines(x_0_secundus, colors='m', ymin=0, ymax=stack.shape[0], linewidth=1.4)
     plt.imshow(graph_secundus, cmap='inferno')
     plt.title("from_secundus {}, there_secundus {}".format(from_secundus, there_secundus))
     plt.colorbar(fraction=0.046, pad=0.04)
-    plt.subplot(236)
+    plt.subplot(338)
     plt.vlines(x_0_secundus - coord_diff_secundus, colors='g', ymin=0, ymax=stack.shape[0], linewidth=1.4)
     plt.imshow(stack_secundus_crop, cmap='inferno')
     plt.title("new point secundus {}".format(x_0_secundus + coord_diff_secundus))
     plt.colorbar(fraction=0.046, pad=0.04)
+    plt.subplot(339)
+    plt.plot(graph_secundus[:, x_0_secundus], color='.m', linewidth=1.4)
+    plt.plot(graph_secundus[y_0_secundus, :], color='.b', linewidth=1.4)
+    plt.plot(gaussian_int(p_opt_secundus[0], p_opt_secundus[1], p_opt_secundus[2], p_opt_secundus[3],
+                          p_opt_secundus[4], p_opt_secundus[5]), colors='.b', linewidth=1.4)
+    plt.title("amp_fit {}, amp_data {}".format(ampFit_secundus, ampData_secundus))
     plt.tight_layout()
     # plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
     plt.show()
 
     return stack_primus_crop #, graph_rf_crop
-
-
-
 
 # es el final
