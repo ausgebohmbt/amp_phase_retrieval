@@ -9,9 +9,9 @@ import numpy as np
 
 
 "paths"
-load_path = "E:/mitsos/pYthOn/slm_chronicles/amphuz_retriev/result/phase_calibration/24-07-04_17-56-29"
+load_path = "E:/mitsos/pYthOn/slm_chronicles/amphuz_retriev/result/phase_calibration/24-07-04_20-36-32"
 save_path = load_path + 'analysis'
-saVe_plots = True
+saVe_plots = False
 if saVe_plots:
     if not os.path.exists(load_path):
         os.mkdir(load_path)

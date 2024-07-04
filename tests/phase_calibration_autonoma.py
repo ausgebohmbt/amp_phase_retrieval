@@ -20,8 +20,8 @@ spacing = 200
 more_space = 0
 print("spacing {}".format(spacing))
 singcular_aperture = draw_circle_displaced(1024, radios, spacing + more_space, 0)
-her_bitness = 0.01
-circular_aperture = draw_n_paste_circle(singcular_aperture*0.8, radios, -(spacing + more_space),
+her_bitness = 120
+circular_aperture = draw_n_paste_circle(singcular_aperture*120, radios, -(spacing + more_space),
                                         0, her_bitness)
 circular_aperture = center_overlay(1272, 1024, circular_aperture)
 

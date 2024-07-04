@@ -32,7 +32,7 @@ cam_obj = Cam.LiveHamamatsu(**params)
 slm_disp_obj = slm
 
 "prep cam"
-frame_num = 20
+frame_num = 100
 cam_obj.mode = "Acq"
 cam_obj.num = 1
 cam_obj.bin_sz = 1
