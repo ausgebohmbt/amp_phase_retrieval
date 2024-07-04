@@ -5,6 +5,8 @@ import numpy as np
 import scipy
 import scipy.optimize as opt
 from colorama import Fore, Style  # , Back
+import matplotlib.pyplot as plt
+
 
 def moving_average(iterable, n=3):
     # moving_average([40, 30, 50, 46, 39, 44]) --> 40.0 42.0 45.0 43.0
@@ -286,7 +288,7 @@ def draw_n_paste_circle(canvas, radious, x0, y0, value):
     return canvas
 
 
-def separate_graph_regions(stack, graph):
+def separate_graph_regions(stack, graph, saVe_path, modDepth, crop_sz=2, saVe_plo=False):
     """separate_graph_regions_of_dOOm , given a stack it is separated into three
         different regions.
         Gaussian fits are used to find the center of the peaks on a second input graph
@@ -296,7 +298,7 @@ def separate_graph_regions(stack, graph):
     approx_primus = 1010
     approx_secundus = 446
     height_o_graph_o = graph.shape[0]
-    half_height_o_graph_o = int(graph.shape[0] // 2)
+    half_height_o_graph_o = int(graph.shape[0] // crop_sz)
     extend = 42
     half_height_o_graph_o_extended = half_height_o_graph_o + extend
     from_primus = approx_primus - half_height_o_graph_o_extended
@@ -320,10 +322,11 @@ def separate_graph_regions(stack, graph):
     print("popt_clb_primus, p_opt_primus: {}, {}".format(popt_clb_primus, p_opt_primus))
     x_0_primus = int(popt_clb_primus[0] + xshape_primus // 2)  # x_0 = int(popt_clb[0] + nx // 2)
     y_0_primus = int(popt_clb_primus[1] + yshape_primus // 2)  # y_0 = int(popt_clb[1] + ny // 2)
-    ampFit_primus = p_opt_primus[4]
-    ampData_primus = graph_primus[y_0_primus, x_0_primus]
+    ampFit_primus = int(p_opt_primus[4])
+    ampData_primus = int(graph_primus[y_0_primus, x_0_primus])
     prof_x_primus = gaussian2d_primus[y_0_primus, :]
     prof_y_primus = gaussian2d_primus[:, x_0_primus]
+    amps_primus = [ampFit_primus, ampData_primus]
     print('2d gau fit result of 1st order region: x0 = {}, y0 = {}'.format(x_0_primus, y_0_primus))
     print(Fore.LIGHTGREEN_EX +
           'fitted amp vs data: fit = {}, data = {}'.format(ampFit_primus, ampData_primus) + Style.RESET_ALL)
@@ -336,10 +339,11 @@ def separate_graph_regions(stack, graph):
     print("popt_clb_nulla, p_opt_nulla: {}, {}".format(popt_clb_nulla, p_opt_nulla))
     x_0_nulla = int(popt_clb_nulla[0] + xshape_nulla // 2)  # x_0 = int(popt_clb[0] + nx // 2)
     y_0_nulla = int(popt_clb_nulla[1] + yshape_nulla // 2)  # y_0 = int(popt_clb[1] + ny // 2)
-    ampFit_nulla = p_opt_nulla[4]
-    ampData_nulla = graph_nulla[y_0_nulla, x_0_nulla]
+    ampFit_nulla = int(p_opt_nulla[4])
+    ampData_nulla = int(graph_nulla[y_0_nulla, x_0_nulla])
     prof_x_nulla = gaussian2d_nulla[y_0_nulla, :]
     prof_y_nulla = gaussian2d_nulla[:, x_0_nulla]
+    amps_nulla = [ampFit_nulla, ampData_nulla]
     print('2d gau fit result of 0th order region: x0 = {}, y0 = {}'.format(x_0_nulla, y_0_nulla))
     print(Fore.LIGHTRED_EX +
           'fitted amp vs data: fit = {}, data = {}'.format(ampFit_nulla, ampData_nulla) + Style.RESET_ALL)
@@ -352,89 +356,100 @@ def separate_graph_regions(stack, graph):
     print("popt_clb_secundus, p_opt_secundus: {}, {}".format(popt_clb_secundus, p_opt_secundus))
     x_0_secundus = int(popt_clb_secundus[0] + xshape_secundus // 2)  # x_0 = int(popt_clb[0] + nx // 2)
     y_0_secundus = int(popt_clb_secundus[1] + yshape_secundus // 2)  # y_0 = int(popt_clb[1] + ny // 2)
-    ampFit_secundus = p_opt_secundus[4]
-    ampData_secundus = graph_secundus[y_0_secundus, x_0_secundus]
+    ampFit_secundus = int(p_opt_secundus[4])
+    ampData_secundus = int(graph_secundus[y_0_secundus, x_0_secundus])
     prof_x_secundus = gaussian2d_secundus[y_0_secundus, :]
     prof_y_secundus = gaussian2d_secundus[:, x_0_secundus]
+    amps_secundus = [ampFit_secundus, ampData_secundus]
     print('2d gau fit result of 2nd order region: x0 = {}, y0 = {}'.format(x_0_secundus, y_0_secundus))
     print(Fore.LIGHTBLUE_EX +
           'fitted amp vs data: fit = {}, data = {}'.format(ampFit_secundus, ampData_secundus) + Style.RESET_ALL)
 
-    print('primus')
+    # print('primus')
     there_primus = from_primus + x_0_primus
     from_new_primus = there_primus - half_height_o_graph_o_extended
     coord_diff = from_new_primus - from_primus
     stack_primus_crop = stack[:, from_new_primus:
                                  (there_primus + half_height_o_graph_o_extended) + 1]
 
-    print('nulla')
+    # print('nulla')
     there_nulla = from_nulla + x_0_nulla
     from_new_nulla = there_nulla - half_height_o_graph_o_extended
     coord_diff_nulla = from_new_nulla - from_nulla
     stack_nulla_crop = stack[:, from_new_nulla:
                                  (there_nulla + half_height_o_graph_o_extended) + 1]
 
-    print('secundus')
+    # print('secundus')
     there_secundus = from_secundus + x_0_secundus
     from_new_secundus = there_secundus - half_height_o_graph_o_extended
     coord_diff_secundus = from_new_secundus - from_secundus
     stack_secundus_crop = stack[:, from_new_secundus:
                                  (there_secundus + half_height_o_graph_o_extended) + 1]
 
-    import matplotlib.pyplot as plt
-
+    "show results"
+    phFig = plt.figure()
     plt.subplot(331)
-    plt.vlines(x_0_primus, colors='m', ymin=0, ymax=stack.shape[0], linewidth=1.4)
+    plt.vlines(x_0_primus, colors='m', ymin=0, ymax=stack.shape[0], linewidth=0.8)
     plt.imshow(graph_primus, cmap='inferno')
-    plt.title("from_primus {}, there {}".format(from_primus, there_primus))
+    plt.title("1st order")
+    # plt.title("from_primus {}, there {}".format(from_primus, there_primus))
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.subplot(332)
-    plt.vlines(x_0_primus - coord_diff, colors='g', ymin=0, ymax=stack.shape[0], linewidth=1.4)
+    plt.vlines(x_0_primus - coord_diff, colors='g', ymin=0, ymax=stack.shape[0], linewidth=0.8)
     plt.imshow(stack_primus_crop, cmap='inferno')
-    plt.title("new point {}".format(x_0_primus + coord_diff))
+    # plt.title("new point {}".format(x_0_primus + coord_diff))
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.subplot(333)
     plt.plot(graph_primus[:, x_0_primus], color='m', linestyle="dotted", linewidth=1.4)
     plt.plot(graph_primus[y_0_primus, :], color='teal', linestyle="dotted", linewidth=1.4)
-    plt.plot(prof_y_primus, color='seagreen', linewidth=1.4)
-    plt.plot(prof_x_primus, color='salmon', linewidth=1.4)
+    plt.plot(prof_y_primus, color='seagreen', linewidth=0.8)
+    plt.plot(prof_x_primus, color='salmon', linewidth=0.8)
     plt.title("amp_fit {}, amp_data {}".format(ampFit_primus, ampData_primus))
     plt.subplot(334)
-    plt.vlines(x_0_nulla, colors='m', ymin=0, ymax=stack.shape[0], linewidth=1.4)
+    plt.vlines(x_0_nulla, colors='m', ymin=0, ymax=stack.shape[0], linewidth=0.8)
     plt.imshow(graph_nulla, cmap='inferno')
-    plt.title("from_nulla {}, there_nulla {}".format(from_nulla, there_nulla))
+    plt.title("0th order")
+    # plt.title("from_nulla {}, there_nulla {}".format(from_nulla, there_nulla))
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.subplot(335)
-    plt.vlines(x_0_nulla - coord_diff_nulla, colors='g', ymin=0, ymax=stack.shape[0], linewidth=1.4)
+    plt.vlines(x_0_nulla - coord_diff_nulla, colors='g', ymin=0, ymax=stack.shape[0], linewidth=0.8)
     plt.imshow(stack_nulla_crop, cmap='inferno')
-    plt.title("new point nulla {}".format(x_0_nulla + coord_diff_nulla))
+    # plt.title("new point nulla {}".format(x_0_nulla + coord_diff_nulla))
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.subplot(336)
     plt.plot(graph_nulla[:, x_0_nulla], color='m', linestyle="dotted", linewidth=1.4)
     plt.plot(graph_nulla[y_0_nulla, :], color='teal', linestyle="dotted", linewidth=1.4)
-    plt.plot(prof_y_nulla, color='seagreen', linewidth=1.4)
-    plt.plot(prof_x_nulla, color='salmon', linewidth=1.4)
+    plt.plot(prof_y_nulla, color='seagreen', linewidth=0.8)
+    plt.plot(prof_x_nulla, color='salmon', linewidth=0.8)
     plt.title("amp_fit {}, amp_data {}".format(ampFit_nulla, ampData_nulla))
     plt.subplot(337)
-    plt.vlines(x_0_secundus, colors='m', ymin=0, ymax=stack.shape[0], linewidth=1.4)
+    plt.vlines(x_0_secundus, colors='m', ymin=0, ymax=stack.shape[0], linewidth=0.8)
     plt.imshow(graph_secundus, cmap='inferno')
-    plt.title("from_secundus {}, there_secundus {}".format(from_secundus, there_secundus))
+    plt.title("2nd order")
+    # plt.title("from_secundus {}, there_secundus {}".format(from_secundus, there_secundus))
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.subplot(338)
-    plt.vlines(x_0_secundus - coord_diff_secundus, colors='g', ymin=0, ymax=stack.shape[0], linewidth=1.4)
+    plt.vlines(x_0_secundus - coord_diff_secundus, colors='g', ymin=0, ymax=stack.shape[0], linewidth=0.8)
     plt.imshow(stack_secundus_crop, cmap='inferno')
-    plt.title("new point secundus {}".format(x_0_secundus + coord_diff_secundus))
+    # plt.title("new point secundus {}".format(x_0_secundus + coord_diff_secundus))
     plt.colorbar(fraction=0.046, pad=0.04)
     plt.subplot(339)
     plt.plot(graph_secundus[:, x_0_secundus], color='m', linestyle="dotted", linewidth=1.4)
     plt.plot(graph_secundus[y_0_secundus, :], color='teal', linestyle="dotted", linewidth=1.4)
-    plt.plot(prof_y_secundus, color='seagreen', linewidth=1.4)
-    plt.plot(prof_x_secundus, color='salmon', linewidth=1.4)
+    plt.plot(prof_y_secundus, color='seagreen', linewidth=0.8)
+    plt.plot(prof_x_secundus, color='salmon', linewidth=0.8)
     plt.title("amp_fit {}, amp_data {}".format(ampFit_secundus, ampData_secundus))
     plt.tight_layout()
     # plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-    plt.show()
+    if saVe_plo:
+        plt.show(block=False)
+        phFig.savefig(saVe_path + '\\calibration_bitDepth {}.png'.format(modDepth),
+                      dpi=300, bbox_inches='tight', transparent=False)
+        plt.pause(0.8)
+        plt.close(phFig)
+    else:
+        plt.show()
 
-    return stack_primus_crop #, graph_rf_crop
+    return amps_primus, amps_nulla, amps_secundus
 
 # es el final

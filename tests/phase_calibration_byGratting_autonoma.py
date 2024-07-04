@@ -4,6 +4,7 @@
 # https://photutils.readthedocs.io/en/stable/centroids.html  # has script for centroid detection, a ha a a
 
 import time
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 from colorama import Fore, Style  # , Back
@@ -14,6 +15,16 @@ import orca.orca_autonoma as Cam
 from slm.slm_hama_amphase import slm
 from peripheral_instruments.thorlabs_shutter import shutter as sh
 from slm.phase_generator_bOOm import phagen
+
+
+save_path = "E:/mitsos/pYthOn/slm_chronicles/amphuz_retriev/result/phase_calibration/"
+saVe_plot = True
+if saVe_plot:
+    date_saved = time.strftime('%y-%m-%d_%H-%M-%S', time.localtime())
+    save_path = save_path + date_saved
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+
 
 "phase"
 phagen.modDepth = 220
@@ -149,39 +160,42 @@ cam_obj.take_average_image(frame_num)
 imgzaz = cam_obj.last_frame - bckgr
 
 "gotta keep em separated"
-stack_primus = separate_graph_regions(stack_sh_fk, img_noBg)
+# separate_graph_regions(stack, graph, saVe_path, modDepth, crop_sz=2, saVe_plo=False):
+amps_primus, amps_nulla, amps_secundus = separate_graph_regions(stack_sh_fk, img_noBg,
+                                                                save_path, modDepth=phagen.modDepth,
+                                                                crop_sz=10, saVe_plo=saVe_plot)
 
-"show em"
-rezs = plt.figure()
-plt.subplot(231)
-plt.imshow(np.log10(stack_sh_fk), cmap='inferno')
-plt.title("log o' stack")
-plt.colorbar(fraction=0.046, pad=0.04)
-plt.subplot(232)
-plt.plot(stack_sh_fk[:, 446])
-plt.plot(stack_sh_fk[:, 1010])
-plt.plot(stack_sh_fk[:, 1568])
-plt.title("profs")
-plt.legend(["2nd order", "1st order", "0th order"])
-plt.subplot(233)
-plt.plot(imgzaz_tipota[50, :])
-plt.plot(imgzaz[50, :])
-plt.title("profile at {}".format(50))
-plt.legend(["empty phase", "corretion & grating"])
-plt.subplot(234)
-plt.plot(imgzaz[50, :] - imgzaz_tipota[50, :])
-plt.title("diff of prof @ {}".format(50))
-plt.subplot(235)
-plt.imshow(nossing, cmap='inferno')
-plt.title("nossing")
-plt.colorbar(fraction=0.046, pad=0.04)
-plt.subplot(236)
-plt.imshow(stack_primus, cmap='inferno')
-# plt.imshow(slm_phase, cmap='inferno')
-plt.title("phase, bitness {}".format(phagen.modDepth))
-plt.colorbar(fraction=0.046, pad=0.04)
-plt.tight_layout()
-# plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-plt.show()
+# "show em"
+# rezs = plt.figure()
+# plt.subplot(231)
+# plt.imshow(np.log10(stack_sh_fk), cmap='inferno')
+# plt.title("log o' stack")
+# plt.colorbar(fraction=0.046, pad=0.04)
+# plt.subplot(232)
+# plt.plot(stack_sh_fk[:, 446])
+# plt.plot(stack_sh_fk[:, 1010])
+# plt.plot(stack_sh_fk[:, 1568])
+# plt.title("profs")
+# plt.legend(["2nd order", "1st order", "0th order"])
+# plt.subplot(233)
+# plt.plot(imgzaz_tipota[50, :])
+# plt.plot(imgzaz[50, :])
+# plt.title("profile at {}".format(50))
+# plt.legend(["empty phase", "corretion & grating"])
+# plt.subplot(234)
+# plt.plot(imgzaz[50, :] - imgzaz_tipota[50, :])
+# plt.title("diff of prof @ {}".format(50))
+# plt.subplot(235)
+# plt.imshow(nossing, cmap='inferno')
+# plt.title("nossing")
+# plt.colorbar(fraction=0.046, pad=0.04)
+# plt.subplot(236)
+# # plt.imshow(stack_primus, cmap='inferno')
+# # # plt.imshow(slm_phase, cmap='inferno')
+# plt.title("phase, bitness {}".format(phagen.modDepth))
+# # plt.colorbar(fraction=0.046, pad=0.04)
+# plt.tight_layout()
+# # plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+# plt.show()
 
 # es el final

@@ -170,7 +170,7 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     :param roi_width: Width of the region of interest on the camera [camera pixels].
     :return:
     """
-    roi_mem = cam_obj.roi_is
+    # roi_mem = cam_obj.roi_is
     date_saved = time.strftime('%y-%m-%d_%H-%M-%S', time.localtime())
     path = pms_obj.data_path + date_saved + '_' + 'measure_slm_intensity'
     os.mkdir(path)
