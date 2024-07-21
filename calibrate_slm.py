@@ -241,10 +241,11 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
     plo_che = True
     if plo_che:
         fig = plt.figure()
-        # plt.imshow(imgzaz, cmap='inferno')
-        plt.imshow(imgzaz, cmap='inferno', vmax=5000)
+        plt.imshow(imgzaz, cmap='inferno', vmax=65500)
         plt.colorbar()
         plt.title("full IMG")
+        fig.savefig(path + '\\_full.png', dpi=300, bbox_inches='tight', transparent=False)
+        np.save(path + '//imgzazFu_LL', imgzaz)
         # plt.show()
         plt.show(block=False)
         plt.pause(1)
@@ -295,7 +296,7 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
 
     "close shutter"
     sh.shutter_state()
-    time.sleep(0.4)
+    time.sleep(4)
     if sh.shut_state == 1:
         sh.shutter_enable()
     time.sleep(0.4)
@@ -320,6 +321,8 @@ def measure_slm_intensity(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         plt.pause(1)
         plt.close(fig)
 
+    # todo: move this in the loop just after uploading the small phase for the first time or, probably better,
+    #  upload a blank here just before it
     "open shutter"
     sh.shutter_state()
     time.sleep(0.1)
@@ -687,8 +690,8 @@ def measure_slm_wavefront(slm_disp_obj, cam_obj, pms_obj, aperture_number, apert
         aperture_powah[i] = img[..., i][143, 153]
         # print("pxl_power[i]: {}".format(aperture_powah[i]))
 
-        # np.save(path + '\\imgF_iter_{}'.format(i), img[:, :, i])
-        # np.save(path + '\\masked_phase_iter_{}'.format(i), masked_phase)
+        np.save(path + '\\imgF_iter_{}'.format(i), img[:, :, i])
+        np.save(path + '\\masked_phase_iter_{}'.format(i), masked_phase)
         if plot_within:
             fig = plt.figure()
             plt.subplot(131), plt.imshow(img_avg, cmap='inferno', vmin=0, vmax=40)
